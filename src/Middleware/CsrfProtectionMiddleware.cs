@@ -28,15 +28,26 @@ public class CsrfProtectionMiddleware
             return;
         }
 
-        // 检查CSRF令牌
-        if (!await ValidateCsrfToken(context))
+        // 跳过Razor Pages的POST请求（ASP.NET Core内置CSRF保护）
+        if (IsRazorPageRequest(context.Request.Path))
         {
-            _logger.LogWarning("CSRF令牌验证失败: {Path} 来源: {RemoteIpAddress}", 
-                context.Request.Path, context.Connection.RemoteIpAddress);
-            
-            context.Response.StatusCode = 403;
-            await context.Response.WriteAsync("CSRF令牌验证失败");
+            await _next(context);
             return;
+        }
+
+        // 只对API请求进行CSRF检查
+        if (IsApiRequest(context.Request.Path))
+        {
+            // 检查CSRF令牌
+            if (!await ValidateCsrfToken(context))
+            {
+                _logger.LogWarning("CSRF令牌验证失败: {Path} 来源: {RemoteIpAddress}", 
+                    context.Request.Path, context.Connection.RemoteIpAddress);
+                
+                context.Response.StatusCode = 403;
+                await context.Response.WriteAsync("CSRF令牌验证失败");
+                return;
+            }
         }
 
         await _next(context);
@@ -82,6 +93,18 @@ public class CsrfProtectionMiddleware
     {
         var staticExtensions = new[] { ".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".woff", ".woff2" };
         return staticExtensions.Any(ext => path.Value.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool IsRazorPageRequest(PathString path)
+    {
+        // 检查是否是Razor Pages的POST请求（通常不包含/api/路径）
+        return !path.Value.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsApiRequest(PathString path)
+    {
+        // 检查是否是API请求
+        return path.Value.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
     }
 }
 
