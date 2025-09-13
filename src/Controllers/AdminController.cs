@@ -76,7 +76,7 @@ public class AdminController : ControllerBase
             };
 
             var result = await _adminService.CreateUserAsync(user, request.Password);
-            return Ok(result);
+            return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
         {
