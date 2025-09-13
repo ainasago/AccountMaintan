@@ -68,6 +68,16 @@ public class AppDbContext
              .HasForeignKey(aa => aa.AccountId);
             // FreeSql 不支持 OnDelete，移除级联删除配置
         });
+
+        // 配置管理员设置实体
+        Fsql.CodeFirst.Entity<AdminSettings>(e =>
+        {
+            e.HasKey(ads => ads.Id);
+            e.Property(ads => ads.DefaultUserRole).HasMaxLength(50);
+            e.Property(ads => ads.MaintenanceMessage).HasMaxLength(500);
+            e.Property(ads => ads.UpdatedBy).HasMaxLength(450);
+            e.ToTable("AdminSettings");
+        });
     }
 
     public void InitializeDatabase()
@@ -76,6 +86,7 @@ public class AppDbContext
         Fsql.CodeFirst.SyncStructure<Account>();
         Fsql.CodeFirst.SyncStructure<SecurityQuestion>();
         Fsql.CodeFirst.SyncStructure<AccountActivity>();
+        Fsql.CodeFirst.SyncStructure<AdminSettings>();
 
         // 检查是否需要插入示例数据
         var accountCount = Fsql.Select<Account>().Count();

@@ -54,8 +54,8 @@
                         <div class="mb-3">
                             <label for="defaultUserRole" class="form-label">默认用户角色</label>
                             <select class="form-select" id="defaultUserRole" name="defaultUserRole">
-                                <option value="User" @(Model.Settings.DefaultUserRole == "User" ? "selected" : "")>普通用户</option>
-                                <option value="Admin" @(Model.Settings.DefaultUserRole == "Admin" ? "selected" : "")>管理员</option>
+                                <option value="User" selected="@(Model.Settings.DefaultUserRole == "User")">普通用户</option>
+                                <option value="Admin" selected="@(Model.Settings.DefaultUserRole == "Admin")">管理员</option>
                             </select>
                         </div>
                     </div>

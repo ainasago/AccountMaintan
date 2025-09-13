@@ -181,6 +181,30 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// 检查用户权限
+    /// </summary>
+    [HttpGet("check-permissions")]
+    public async Task<IActionResult> CheckPermissions()
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Ok(new { isAdmin = false });
+            }
+
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            return Ok(new { isAdmin = isAdmin });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "检查用户权限失败");
+            return Ok(new { isAdmin = false });
+        }
+    }
+
+    /// <summary>
     /// 更新管理员设置
     /// </summary>
     [HttpPost("settings")]
@@ -195,7 +219,7 @@ public class AdminController : ControllerBase
             }
 
             var result = await _adminService.UpdateAdminSettingsAsync(settings, currentUserId);
-            return Ok(result);
+            return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
         {

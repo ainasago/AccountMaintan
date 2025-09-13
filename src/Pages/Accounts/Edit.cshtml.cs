@@ -64,7 +64,9 @@ public class EditModel : PageModel
             }
         }
 
-        if (!ModelState.IsValid)
+        // 用户名和密码都是可选的，不需要验证
+        // 只验证账号名称是否为空
+        if (string.IsNullOrWhiteSpace(Account.Name))
         {
             return Page();
         }

@@ -44,6 +44,7 @@ public class CreateModel : PageModel
             ModelState.AddModelError("Account.Name", "账号名称不能为空");
         }
 
+        // 用户名和密码都是可选的，不需要验证
         //if (!ModelState.IsValid)
         //{
         //    return Page();

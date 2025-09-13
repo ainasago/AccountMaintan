@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using WebUI.Models;
+using WebUI.Services;
 
 namespace WebUI.Pages.Account;
 
@@ -12,14 +13,17 @@ public class LoginModel : PageModel
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<LoginModel> _logger;
+    private readonly IAdminService _adminService;
 
     public LoginModel(SignInManager<ApplicationUser> signInManager, 
                      UserManager<ApplicationUser> userManager,
-                     ILogger<LoginModel> logger)
+                     ILogger<LoginModel> logger,
+                     IAdminService adminService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _logger = logger;
+        _adminService = adminService;
     }
 
     [BindProperty]
@@ -29,6 +33,8 @@ public class LoginModel : PageModel
 
     [TempData]
     public string? ErrorMessage { get; set; }
+
+    public bool AllowRegistration { get; set; }
 
     public class InputModel
     {
@@ -57,6 +63,18 @@ public class LoginModel : PageModel
 
         // Clear the existing external cookie to ensure a clean login process
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        // 获取注册设置
+        try
+        {
+            var adminSettings = await _adminService.GetAdminSettingsAsync();
+            AllowRegistration = adminSettings.AllowRegistration;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取注册设置失败");
+            AllowRegistration = false; // 默认不允许注册
+        }
 
         ReturnUrl = returnUrl;
     }

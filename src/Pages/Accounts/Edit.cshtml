@@ -62,7 +62,7 @@
                                 <div class="mb-3">
                                     <label asp-for="Account.Username" class="form-label">用户名</label>
                                     <input asp-for="Account.Username" class="form-control" placeholder="请输入用户名" autocomplete="off">
-                                    <span asp-validation-for="Account.Username" class="text-danger"></span>
+                                    <div class="form-text">可选，用于记录登录用户名</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -77,8 +77,7 @@
                                             <i class="fas fa-dice"></i>
                                         </button>
                                     </div>
-                                    <span asp-validation-for="Account.Password" class="text-danger"></span>
-                                    <div class="form-text">留空表示不修改密码，输入新密码将覆盖原密码</div>
+                                    <div class="form-text">可选，留空表示不修改密码，输入新密码将覆盖原密码</div>
                                 </div>
                             </div>
                         </div>

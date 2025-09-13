@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebUI.Data;
 using WebUI.Models;
+using FreeSql;
 
 namespace WebUI.Services;
 
@@ -78,15 +79,18 @@ public class AdminService : IAdminService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _context;
+    private readonly IFreeSql _freeSql;
     private readonly ILogger<AdminService> _logger;
 
     public AdminService(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext context,
+        IFreeSql freeSql,
         ILogger<AdminService> logger)
     {
         _userManager = userManager;
         _context = context;
+        _freeSql = freeSql;
         _logger = logger;
     }
 
@@ -280,19 +284,26 @@ public class AdminService : IAdminService
     {
         try
         {
-            var settings = await _context.AdminSettings.FirstOrDefaultAsync();
-            if (settings == null)
+            // 先检查是否存在记录
+            var count = await _freeSql.Select<AdminSettings>().CountAsync();
+            if (count == 0)
             {
                 // 创建默认设置
-                settings = new AdminSettings();
-                _context.AdminSettings.Add(settings);
-                await _context.SaveChangesAsync();
+                var defaultSettings = new AdminSettings();
+                await _freeSql.Insert(defaultSettings).ExecuteIdentityAsync();
+                return defaultSettings;
             }
-            return settings;
+            else
+            {
+                // 获取现有设置
+                var settings = await _freeSql.Select<AdminSettings>().FirstAsync();
+                return settings;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取管理员设置失败");
+            // 如果查询失败，返回默认设置
             return new AdminSettings();
         }
     }
@@ -301,15 +312,19 @@ public class AdminService : IAdminService
     {
         try
         {
-            var existingSettings = await _context.AdminSettings.FirstOrDefaultAsync();
-            if (existingSettings == null)
+            // 先检查是否存在记录
+            var count = await _freeSql.Select<AdminSettings>().CountAsync();
+            if (count == 0)
             {
+                // 创建新设置
                 settings.UpdatedBy = updatedBy;
                 settings.LastUpdated = DateTime.Now;
-                _context.AdminSettings.Add(settings);
+                await _freeSql.Insert(settings).ExecuteIdentityAsync();
             }
             else
             {
+                // 更新现有设置
+                var existingSettings = await _freeSql.Select<AdminSettings>().FirstAsync();
                 existingSettings.AllowRegistration = settings.AllowRegistration;
                 existingSettings.RequireAdminApproval = settings.RequireAdminApproval;
                 existingSettings.MaxUsers = settings.MaxUsers;
@@ -318,9 +333,11 @@ public class AdminService : IAdminService
                 existingSettings.MaintenanceMessage = settings.MaintenanceMessage;
                 existingSettings.UpdatedBy = updatedBy;
                 existingSettings.LastUpdated = DateTime.Now;
+                
+                await _freeSql.Update<AdminSettings>()
+                    .SetSource(existingSettings)
+                    .ExecuteAffrowsAsync();
             }
-
-            await _context.SaveChangesAsync();
             _logger.LogInformation("管理员设置已更新: {UpdatedBy}", updatedBy);
             return (true, "设置更新成功");
         }

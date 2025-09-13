@@ -59,7 +59,15 @@
                     
                     <hr class="my-4">
                     
-                   
+                    @if (Model.AllowRegistration)
+                    {
+                        <div class="text-center">
+                            <p class="mb-2">还没有账号？</p>
+                            <a asp-page="./Register" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i>立即注册
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

@@ -170,17 +170,17 @@ builder.Services.AddSignalR();
 builder.Services.AddHangfireServices(builder.Configuration);
 
 var app = builder.Build();
-app.UseDeveloperExceptionPage();
-    // Configure the HTTP request pipeline.
-//if (!app.Environment.IsDevelopment() && !isDesktop)
-//{
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
     app.UseExceptionHandler("/Error");
     app.UseHsts();
-//}
-//else
-//{
-//    app.UseExceptionHandler("/Error");
-//}
+}
 
 // 先处理来自代理的转发头，再做HTTPS重定向
 app.UseForwardedHeaders();
