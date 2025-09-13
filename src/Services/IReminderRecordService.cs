@@ -18,9 +18,19 @@ public interface IReminderRecordService
     Task<List<ReminderRecord>> GetRecordsAsync(int page = 1, int pageSize = 20, string? recordType = null, string? status = null);
 
     /// <summary>
+    /// 获取指定用户的提醒记录列表
+    /// </summary>
+    Task<List<ReminderRecord>> GetUserRecordsAsync(string userId, int page = 1, int pageSize = 20, string? recordType = null, string? status = null);
+
+    /// <summary>
     /// 获取记录总数
     /// </summary>
     Task<int> GetRecordsCountAsync(string? recordType = null, string? status = null);
+
+    /// <summary>
+    /// 获取指定用户的记录总数
+    /// </summary>
+    Task<int> GetUserRecordsCountAsync(string userId, string? recordType = null, string? status = null);
 
     /// <summary>
     /// 删除记录

@@ -13,6 +13,7 @@ public interface IReminderService
     /// 检查需要提醒的账号
     /// </summary>
     Task<List<Account>> CheckRemindersAsync();
+    Task<List<Account>> CheckRemindersAsync(string? userId = null);
     
     /// <summary>
     /// 发送提醒
@@ -55,6 +56,47 @@ public class ReminderService : IReminderService
             var accounts = await _context.Fsql.Select<Account>()
                 .Where(a => a.IsActive && a.ReminderCycle > 0)
                 .ToListAsync();
+
+            _logger.LogDebug("找到 {Count} 个启用了提醒的账号", accounts.Count);
+
+            foreach (var account in accounts)
+            {
+                if (ShouldSendReminder(account, now))
+                {
+                    accountsNeedingReminder.Add(account);
+                    _logger.LogDebug("账号 {AccountName} 需要提醒，已超过 {Days} 天未访问", 
+                        account.Name, account.ReminderCycle);
+                }
+            }
+
+            _logger.LogDebug("检查完成，共有 {Count} 个账号需要提醒", accountsNeedingReminder.Count);
+            return accountsNeedingReminder;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "检查提醒失败");
+            throw;
+        }
+    }
+
+    public async Task<List<Account>> CheckRemindersAsync(string? userId = null)
+    {
+        _logger.LogDebug("开始检查需要提醒的账号，用户ID: {UserId}", userId ?? "所有用户");
+        var now = DateTime.Now;
+        var accountsNeedingReminder = new List<Account>();
+
+        try
+        {
+            var query = _context.Fsql.Select<Account>()
+                .Where(a => a.IsActive && a.ReminderCycle > 0);
+
+            // 如果指定了用户ID，只检查该用户的账号
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(a => a.UserId == userId);
+            }
+
+            var accounts = await query.ToListAsync();
 
             _logger.LogDebug("找到 {Count} 个启用了提醒的账号", accounts.Count);
 

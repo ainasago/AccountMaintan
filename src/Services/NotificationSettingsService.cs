@@ -189,7 +189,7 @@ public class NotificationSettingsService : INotificationSettingsService
                 _logger.LogInformation("测试邮件发送成功，收件人: {Recipients}", string.Join(",", recipients));
                 
                 // 记录测试历史
-                await RecordNotificationAsync("测试账号", null, "Test", "Email", true, "测试邮件发送成功");
+                await RecordNotificationAsync("测试账号", null, "Test", "Email", true, null, "测试邮件发送成功");
                 return true;
             }
         }
@@ -257,7 +257,7 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("Gmail API 测试邮件已发送，Id: {Id}", result?.Id);
             
             // 记录测试历史
-            await RecordNotificationAsync("测试账号", null, "Test", "Email", !string.IsNullOrEmpty(result?.Id), "Gmail API 测试邮件发送成功");
+            await RecordNotificationAsync("测试账号", null, "Test", "Email", !string.IsNullOrEmpty(result?.Id), null, "Gmail API 测试邮件发送成功");
             return !string.IsNullOrEmpty(result?.Id);
         }
         catch (Exception ex)
@@ -315,7 +315,7 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("Gmail API (credentials.json) 测试邮件已发送，Id: {Id}", result?.Id);
             
             // 记录测试历史
-            await RecordNotificationAsync("测试账号", null, "Test", "Email", !string.IsNullOrEmpty(result?.Id), "Gmail API (credentials.json) 测试邮件发送成功");
+            await RecordNotificationAsync("测试账号", null, "Test", "Email", !string.IsNullOrEmpty(result?.Id), null, "Gmail API (credentials.json) 测试邮件发送成功");
             return !string.IsNullOrEmpty(result?.Id);
         }
         catch (Exception ex)
@@ -325,7 +325,7 @@ public class NotificationSettingsService : INotificationSettingsService
         }
     }
 
-    private async Task<bool> SendByGmailApiWithCustomContentAsync(EmailSettings settings, List<string> recipients, string subject, string body)
+    private async Task<bool> SendByGmailApiWithCustomContentAsync(EmailSettings settings, List<string> recipients, string subject, string body, string? userId = null)
     {
         try
         {
@@ -380,7 +380,7 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("Gmail API 邮件已发送，Id: {Id}", result?.Id);
             
             // 记录发送历史
-            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", !string.IsNullOrEmpty(result?.Id), "Gmail API 邮件发送成功");
+            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", !string.IsNullOrEmpty(result?.Id), userId, "Gmail API 邮件发送成功");
             return !string.IsNullOrEmpty(result?.Id);
         }
         catch (Exception ex)
@@ -390,7 +390,7 @@ public class NotificationSettingsService : INotificationSettingsService
         }
     }
 
-    private async Task<bool> SendByGmailApiWithLocalCredentialsAndCustomContentAsync(EmailSettings settings, List<string> recipients, string subject, string body)
+    private async Task<bool> SendByGmailApiWithLocalCredentialsAndCustomContentAsync(EmailSettings settings, List<string> recipients, string subject, string body, string? userId = null)
     {
         try
         {
@@ -438,7 +438,7 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("Gmail API (credentials.json) 邮件已发送，Id: {Id}", result?.Id);
             
             // 记录发送历史
-            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", !string.IsNullOrEmpty(result?.Id), "Gmail API (credentials.json) 邮件发送成功");
+            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", !string.IsNullOrEmpty(result?.Id), userId, "Gmail API (credentials.json) 邮件发送成功");
             return !string.IsNullOrEmpty(result?.Id);
         }
         catch (Exception ex)
@@ -496,7 +496,7 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("Telegram 测试消息发送成功");
             
             // 记录测试历史
-            await RecordNotificationAsync("测试账号", null, "Test", "Telegram", true, "Telegram 测试消息发送成功");
+            await RecordNotificationAsync("测试账号", null, "Test", "Telegram", true, null, "Telegram 测试消息发送成功");
             return true;
         }
         catch (Exception ex)
@@ -540,7 +540,7 @@ public class NotificationSettingsService : INotificationSettingsService
         }
     }
 
-    public async Task<bool> SendEmailAsync(string subject, string body)
+    public async Task<bool> SendEmailAsync(string subject, string body, string? userId = null)
     {
         var settings = await GetSettingsAsync();
         if (!settings.Email.IsEnabled)
@@ -563,11 +563,11 @@ public class NotificationSettingsService : INotificationSettingsService
                 !string.IsNullOrWhiteSpace(settings.Email.GmailClientSecret) &&
                 !string.IsNullOrWhiteSpace(settings.Email.GmailRefreshToken))
             {
-                return await SendByGmailApiWithCustomContentAsync(settings.Email, recipients, subject, body);
+                return await SendByGmailApiWithCustomContentAsync(settings.Email, recipients, subject, body, userId);
             }
             else
             {
-                return await SendByGmailApiWithLocalCredentialsAndCustomContentAsync(settings.Email, recipients, subject, body);
+                return await SendByGmailApiWithLocalCredentialsAndCustomContentAsync(settings.Email, recipients, subject, body, userId);
             }
         }
         else
@@ -603,12 +603,12 @@ public class NotificationSettingsService : INotificationSettingsService
             _logger.LogInformation("邮件发送成功，收件人: {Recipients}", string.Join(",", recipients));
             
             // 记录发送历史
-            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", true, "邮件发送成功");
+            await RecordNotificationAsync("实际账号", null, "Reminder", "Email", true, userId, "邮件发送成功");
             return true;
         }
     }
 
-    public async Task<bool> SendTelegramAsync(string text, bool enableMarkdown = false)
+    public async Task<bool> SendTelegramAsync(string text, bool enableMarkdown = false, string? userId = null)
     {
         var settings = await GetSettingsAsync();
         if (!settings.Telegram.IsEnabled)
@@ -637,12 +637,12 @@ public class NotificationSettingsService : INotificationSettingsService
                 _logger.LogWarning("Telegram 发送失败: {Status} {Body}", resp.StatusCode, body);
                 
                 // 记录发送失败历史
-                await RecordNotificationAsync("实际账号", null, "Reminder", "Telegram", false, null, $"HTTP {resp.StatusCode}: {body}");
+                await RecordNotificationAsync("实际账号", null, "Reminder", "Telegram", false, userId, null, $"HTTP {resp.StatusCode}: {body}");
                 return false;
             }
             
             // 记录发送成功历史
-            await RecordNotificationAsync("实际账号", null, "Reminder", "Telegram", true, "Telegram 消息发送成功");
+            await RecordNotificationAsync("实际账号", null, "Reminder", "Telegram", true, userId, "Telegram 消息发送成功");
             return true;
         }
         catch (Exception ex)
@@ -669,7 +669,7 @@ public class NotificationSettingsService : INotificationSettingsService
     /// <summary>
     /// 记录提醒历史
     /// </summary>
-    private async Task RecordNotificationAsync(string accountName, string? accountId, string recordType, string channel, bool success, string? message = null, string? errorMessage = null)
+    private async Task RecordNotificationAsync(string accountName, string? accountId, string recordType, string channel, bool success, string? userId = null, string? message = null, string? errorMessage = null)
     {
         try
         {
@@ -677,6 +677,7 @@ public class NotificationSettingsService : INotificationSettingsService
             {
                 AccountName = accountName,
                 AccountId = !string.IsNullOrEmpty(accountId) ? Guid.Parse(accountId) : null,
+                UserId = userId ?? string.Empty,
                 RecordType = recordType,
                 NotificationChannel = channel,
                 Status = success ? "Success" : "Failed",
@@ -697,7 +698,7 @@ public class NotificationSettingsService : INotificationSettingsService
     /// <summary>
     /// 使用模板发送邮件
     /// </summary>
-    public async Task<bool> SendEmailWithTemplateAsync(string accountName = "", string accountId = "")
+    public async Task<bool> SendEmailWithTemplateAsync(string accountName = "", string accountId = "", string? userId = null)
     {
         var settings = await GetSettingsAsync();
         if (!settings.Email.IsEnabled)
@@ -713,7 +714,7 @@ public class NotificationSettingsService : INotificationSettingsService
         var success = await SendEmailAsync(subject, body);
         
         // 记录实际账号提醒历史
-        await RecordNotificationAsync(accountName, accountId, "Reminder", "Email", success, success ? "邮件提醒发送成功" : "邮件提醒发送失败");
+        await RecordNotificationAsync(accountName, accountId, "Reminder", "Email", success, userId, success ? "邮件提醒发送成功" : "邮件提醒发送失败");
         
         return success;
     }
@@ -721,7 +722,7 @@ public class NotificationSettingsService : INotificationSettingsService
     /// <summary>
     /// 使用模板发送Telegram消息
     /// </summary>
-    public async Task<bool> SendTelegramWithTemplateAsync(string accountName = "", string accountId = "")
+    public async Task<bool> SendTelegramWithTemplateAsync(string accountName = "", string accountId = "", string? userId = null)
     {
         var settings = await GetSettingsAsync();
         if (!settings.Telegram.IsEnabled)
@@ -736,7 +737,7 @@ public class NotificationSettingsService : INotificationSettingsService
         var success = await SendTelegramAsync(message, settings.Telegram.EnableMarkdown);
         
         // 记录实际账号提醒历史
-        await RecordNotificationAsync(accountName, accountId, "Reminder", "Telegram", success, success ? "Telegram提醒发送成功" : "Telegram提醒发送失败");
+        await RecordNotificationAsync(accountName, accountId, "Reminder", "Telegram", success, userId, success ? "Telegram提醒发送成功" : "Telegram提醒发送失败");
         
         return success;
     }

@@ -30,12 +30,12 @@ public interface INotificationSettingsService
     /// <summary>
     /// 发送邮件（根据当前保存的设置）
     /// </summary>
-    Task<bool> SendEmailAsync(string subject, string body);
+    Task<bool> SendEmailAsync(string subject, string body, string? userId = null);
 
     /// <summary>
     /// 发送 Telegram 消息（根据当前保存的设置）
     /// </summary>
-    Task<bool> SendTelegramAsync(string text, bool enableMarkdown = false);
+    Task<bool> SendTelegramAsync(string text, bool enableMarkdown = false, string? userId = null);
 
     /// <summary>
     /// 发送测试通知
@@ -45,10 +45,10 @@ public interface INotificationSettingsService
     /// <summary>
     /// 使用模板发送邮件
     /// </summary>
-    Task<bool> SendEmailWithTemplateAsync(string accountName = "", string accountId = "");
+    Task<bool> SendEmailWithTemplateAsync(string accountName = "", string accountId = "", string? userId = null);
 
     /// <summary>
     /// 使用模板发送Telegram消息
     /// </summary>
-    Task<bool> SendTelegramWithTemplateAsync(string accountName = "", string accountId = "");
+    Task<bool> SendTelegramWithTemplateAsync(string accountName = "", string accountId = "", string? userId = null);
 }

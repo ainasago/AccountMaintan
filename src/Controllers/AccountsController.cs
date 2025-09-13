@@ -16,14 +16,17 @@ public class AccountsController : ControllerBase
     private readonly IAccountService _accountService;
     private readonly IEncryptionService _encryptionService;
     private readonly ITotpService _totpService;
+    private readonly IAdminService _adminService;
 
     public AccountsController(IAccountService accountService, 
                             IEncryptionService encryptionService,
-                            ITotpService totpService)
+                            ITotpService totpService,
+                            IAdminService adminService)
     {
         _accountService = accountService;
         _encryptionService = encryptionService;
         _totpService = totpService;
+        _adminService = adminService;
     }
 
     /// <summary>
@@ -34,7 +37,27 @@ public class AccountsController : ControllerBase
     {
         try
         {
-            var accounts = await _accountService.GetAllAccountsAsync();
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { success = false, message = "用户未认证" });
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            List<Account> accounts;
+            
+            if (isAdmin)
+            {
+                // 管理员可以看到所有账号
+                accounts = await _accountService.GetAllAccountsAsync();
+            }
+            else
+            {
+                // 普通用户只能看到自己的账号
+                accounts = await _accountService.GetUserAccountsAsync(currentUserId);
+            }
+
             return Ok(new { success = true, data = accounts });
         }
         catch (Exception ex)
@@ -51,7 +74,27 @@ public class AccountsController : ControllerBase
     {
         try
         {
-            var account = await _accountService.GetAccountByIdAsync(id);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { success = false, message = "用户未认证" });
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            Account? account;
+            
+            if (isAdmin)
+            {
+                // 管理员可以查看任何账号
+                account = await _accountService.GetAccountByIdAsync(id);
+            }
+            else
+            {
+                // 普通用户只能查看自己的账号
+                account = await _accountService.GetUserAccountByIdAsync(id, currentUserId);
+            }
+
             if (account == null)
             {
                 return NotFound(new { success = false, message = "账号不存在" });
@@ -71,7 +114,7 @@ public class AccountsController : ControllerBase
                 account.Id,
                 account.Name,
                 account.Url,
-                account.Username,
+                Username = account.Username ?? string.Empty,
                 account.Category,
                 account.Tags,
                 account.Notes,
@@ -106,11 +149,11 @@ public class AccountsController : ControllerBase
                 return NotFound(new { success = false, message = "账号不存在" });
             }
 
-            var decryptedPassword = _encryptionService.Decrypt(account.Password);
+            var decryptedPassword = _encryptionService.Decrypt(account.Password ?? string.Empty);
             
             return Ok(new { 
                 success = true, 
-                username = account.Username,
+                username = account.Username ?? string.Empty,
                 password = decryptedPassword 
             });
         }
@@ -128,10 +171,19 @@ public class AccountsController : ControllerBase
     {
         try
         {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { success = false, message = "用户未认证" });
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "数据验证失败", errors = ModelState });
             }
+
+            // 设置用户ID
+            account.UserId = currentUserId;
 
             var createdAccount = await _accountService.CreateAccountAsync(account);
             return CreatedAtAction(nameof(GetAccount), new { id = createdAccount.Id }, 
@@ -151,6 +203,12 @@ public class AccountsController : ControllerBase
     {
         try
         {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { success = false, message = "用户未认证" });
+            }
+
             if (id != account.Id)
             {
                 return BadRequest(new { success = false, message = "ID不匹配" });
@@ -160,6 +218,21 @@ public class AccountsController : ControllerBase
             {
                 return BadRequest(new { success = false, message = "数据验证失败", errors = ModelState });
             }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            if (!isAdmin)
+            {
+                // 普通用户只能更新自己的账号
+                var existingAccount = await _accountService.GetUserAccountByIdAsync(id, currentUserId);
+                if (existingAccount == null)
+                {
+                    return NotFound(new { success = false, message = "账号不存在或无权访问" });
+                }
+            }
+
+            // 设置用户ID（确保数据一致性）
+            account.UserId = currentUserId;
 
             var result = await _accountService.UpdateAccountAsync(account);
             if (!result)
@@ -183,6 +256,24 @@ public class AccountsController : ControllerBase
     {
         try
         {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { success = false, message = "用户未认证" });
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            if (!isAdmin)
+            {
+                // 普通用户只能删除自己的账号
+                var existingAccount = await _accountService.GetUserAccountByIdAsync(id, currentUserId);
+                if (existingAccount == null)
+                {
+                    return NotFound(new { success = false, message = "账号不存在或无权访问" });
+                }
+            }
+
             var result = await _accountService.DeleteAccountAsync(id);
             if (!result)
             {

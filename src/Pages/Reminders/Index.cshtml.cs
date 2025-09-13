@@ -10,11 +10,13 @@ public class IndexModel : PageModel
 {
     private readonly IReminderService _reminderService;
     private readonly IAccountService _accountService;
+    private readonly IAdminService _adminService;
 
-    public IndexModel(IReminderService reminderService, IAccountService accountService)
+    public IndexModel(IReminderService reminderService, IAccountService accountService, IAdminService adminService)
     {
         _reminderService = reminderService;
         _accountService = accountService;
+        _adminService = adminService;
     }
 
     public List<WebUI.Models.Account> Reminders { get; set; } = new();
@@ -27,8 +29,19 @@ public class IndexModel : PageModel
     {
         try
         {
-            // 获取需要提醒的账号
-            Reminders = await _reminderService.CheckRemindersAsync();
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return;
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            
+            // 获取需要提醒的账号（根据用户权限过滤）
+            Reminders = isAdmin 
+                ? await _reminderService.CheckRemindersAsync() 
+                : await _reminderService.CheckRemindersAsync(currentUserId);
             
             var now = DateTime.Now;
             

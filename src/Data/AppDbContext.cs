@@ -33,6 +33,7 @@ public class AppDbContext
         Fsql.CodeFirst.Entity<Account>(e =>
         {
             e.HasKey(a => a.Id);
+            e.Property(a => a.UserId).HasMaxLength(450).IsRequired();
             e.Property(a => a.Name).HasMaxLength(100);
             e.Property(a => a.Url).HasMaxLength(500);
             e.Property(a => a.Username).HasMaxLength(100);

@@ -17,11 +17,13 @@ public class ReminderRecordsController : ControllerBase
 {
     private readonly IReminderRecordService _recordService;
     private readonly ILogger<ReminderRecordsController> _logger;
+    private readonly IAdminService _adminService;
 
-    public ReminderRecordsController(IReminderRecordService recordService, ILogger<ReminderRecordsController> logger)
+    public ReminderRecordsController(IReminderRecordService recordService, ILogger<ReminderRecordsController> logger, IAdminService adminService)
     {
         _recordService = recordService;
         _logger = logger;
+        _adminService = adminService;
     }
 
     /// <summary>
@@ -36,8 +38,22 @@ public class ReminderRecordsController : ControllerBase
     {
         try
         {
-            var records = await _recordService.GetRecordsAsync(page, pageSize, recordType, status);
-            var totalCount = await _recordService.GetRecordsCountAsync(recordType, status);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { message = "用户未认证" });
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            
+            var records = isAdmin 
+                ? await _recordService.GetRecordsAsync(page, pageSize, recordType, status)
+                : await _recordService.GetUserRecordsAsync(currentUserId, page, pageSize, recordType, status);
+            
+            var totalCount = isAdmin 
+                ? await _recordService.GetRecordsCountAsync(recordType, status)
+                : await _recordService.GetUserRecordsCountAsync(currentUserId, recordType, status);
 
             return Ok(new
             {

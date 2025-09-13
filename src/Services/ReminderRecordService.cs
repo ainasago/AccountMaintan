@@ -86,6 +86,37 @@ public class ReminderRecordService : IReminderRecordService
         }
     }
 
+    public async Task<List<ReminderRecord>> GetUserRecordsAsync(string userId, int page = 1, int pageSize = 20, string? recordType = null, string? status = null)
+    {
+        try
+        {
+            var query = _freeSql.Select<ReminderRecord>()
+                .Where(r => r.UserId == userId);
+
+            if (!string.IsNullOrEmpty(recordType))
+            {
+                query = query.Where(r => r.RecordType == recordType);
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            var records = await query
+                .OrderByDescending(r => r.CreatedAt)
+                .Page(page, pageSize)
+                .ToListAsync();
+
+            return records;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户提醒记录失败，用户ID: {UserId}", userId);
+            return new List<ReminderRecord>();
+        }
+    }
+
     /// <summary>
     /// 获取记录总数
     /// </summary>
@@ -111,6 +142,33 @@ public class ReminderRecordService : IReminderRecordService
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取提醒记录总数失败");
+            return 0;
+        }
+    }
+
+    public async Task<int> GetUserRecordsCountAsync(string userId, string? recordType = null, string? status = null)
+    {
+        try
+        {
+            var query = _freeSql.Select<ReminderRecord>()
+                .Where(r => r.UserId == userId);
+
+            if (!string.IsNullOrEmpty(recordType))
+            {
+                query = query.Where(r => r.RecordType == recordType);
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            var count = await query.CountAsync();
+            return (int)count;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户记录总数失败，用户ID: {UserId}", userId);
             return 0;
         }
     }

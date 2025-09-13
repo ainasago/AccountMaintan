@@ -10,11 +10,13 @@ public class IndexModel : PageModel
 {
     private readonly IAccountService _accountService;
     private readonly IReminderService _reminderService;
+    private readonly IAdminService _adminService;
 
-    public IndexModel(IAccountService accountService, IReminderService reminderService)
+    public IndexModel(IAccountService accountService, IReminderService reminderService, IAdminService adminService)
     {
         _accountService = accountService;
         _reminderService = reminderService;
+        _adminService = adminService;
     }
 
     public int TotalAccounts { get; set; }
@@ -28,15 +30,35 @@ public class IndexModel : PageModel
     {
         try
         {
-            // 获取所有账号
-            var allAccounts = await _accountService.GetAllAccountsAsync();
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return;
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            List<WebUI.Models.Account> allAccounts;
+            
+            if (isAdmin)
+            {
+                // 管理员可以看到所有账号
+                allAccounts = await _accountService.GetAllAccountsAsync();
+            }
+            else
+            {
+                // 普通用户只能看到自己的账号
+                allAccounts = await _accountService.GetUserAccountsAsync(currentUserId);
+            }
             
             // 统计数据
             TotalAccounts = allAccounts.Count;
             ActiveAccounts = allAccounts.Count(a => a.IsActive);
             
-            // 获取需要提醒的账号
-            var accountsNeedingReminder = await _reminderService.CheckRemindersAsync();
+            // 获取需要提醒的账号（根据用户权限过滤）
+            var accountsNeedingReminder = isAdmin 
+                ? await _reminderService.CheckRemindersAsync() 
+                : await _reminderService.CheckRemindersAsync(currentUserId);
             AccountsNeedingReminder = accountsNeedingReminder.Count;
             AccountsNeedingReminderList = accountsNeedingReminder;
             

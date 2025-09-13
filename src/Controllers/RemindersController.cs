@@ -96,7 +96,7 @@ namespace WebUI.Controllers
                 {
                     id = a.Id,
                     name = a.Name,
-                    username = a.Username,
+                    username = a.Username ?? string.Empty,
                     daysSinceLastVisit = a.DaysSinceLastVisit,
                     lastVisitDate = a.LastVisited,
                     reminderDays = a.ReminderCycle

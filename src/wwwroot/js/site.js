@@ -15,14 +15,28 @@ function checkAdminPermissions() {
         type: 'GET',
         success: function(response) {
             if (response.isAdmin) {
+                // 管理员可以看到所有菜单
                 $('#adminMenu').show();
                 $('#adminSettingsMenu').show();
+                $('#settingsMenu').show();
+                $('#securityMenu').show();
+                $('#hangfireMenu').show();
+            } else {
+                // 普通用户只能看到账号管理和提醒管理
+                $('#adminMenu').hide();
+                $('#adminSettingsMenu').hide();
+                $('#settingsMenu').hide();
+                $('#securityMenu').hide();
+                $('#hangfireMenu').hide();
             }
         },
         error: function() {
-            // 如果API不存在或出错，隐藏管理菜单
+            // 如果API不存在或出错，隐藏管理菜单，显示普通用户菜单
             $('#adminMenu').hide();
             $('#adminSettingsMenu').hide();
+            $('#settingsMenu').hide();
+            $('#securityMenu').hide();
+            $('#hangfireMenu').hide();
         }
     });
 }

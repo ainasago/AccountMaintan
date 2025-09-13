@@ -32,7 +32,7 @@
     "CheckInterval": "0 0/1 * * * ?",
     "DefaultReminderCycle": 1,
     "EnableAutoReminder": true,
-    "ReminderHour": 0,
+    "ReminderHour": 9,
     "ReminderMinute": 0
   }
 }

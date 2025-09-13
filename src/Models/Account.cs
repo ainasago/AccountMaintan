@@ -13,6 +13,12 @@ public class Account
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
+    /// 所属用户ID
+    /// </summary>
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
     /// 账号名称/服务名称
     /// </summary>
     [StringLength(100, ErrorMessage = "账号名称长度不能超过100个字符")]
@@ -27,12 +33,12 @@ public class Account
     /// <summary>
     /// 用户名
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string? Username { get; set; }
 
     /// <summary>
     /// 密码（加密存储）
     /// </summary>
-    public string Password { get; set; } = string.Empty;
+    public string? Password { get; set; }
 
     /// <summary>
     /// 创建时间

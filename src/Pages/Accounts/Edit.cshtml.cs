@@ -11,11 +11,13 @@ public class EditModel : PageModel
 {
     private readonly IAccountService _accountService;
     private readonly ILogger<EditModel> _logger;
+    private readonly IAdminService _adminService;
 
-    public EditModel(IAccountService accountService, ILogger<EditModel> logger)
+    public EditModel(IAccountService accountService, ILogger<EditModel> logger, IAdminService adminService)
     {
         _accountService = accountService;
         _logger = logger;
+        _adminService = adminService;
     }
 
     [BindProperty]
@@ -28,7 +30,27 @@ public class EditModel : PageModel
     {
         try
         {
-            var account = await _accountService.GetAccountByIdAsync(id);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized();
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            WebUI.Models.Account? account;
+            
+            if (isAdmin)
+            {
+                // 管理员可以编辑任何账号
+                account = await _accountService.GetAccountByIdAsync(id);
+            }
+            else
+            {
+                // 普通用户只能编辑自己的账号
+                account = await _accountService.GetUserAccountByIdAsync(id, currentUserId);
+            }
+
             if (account == null)
             {
                 return NotFound();
@@ -73,6 +95,13 @@ public class EditModel : PageModel
 
         try
         {
+            // 设置用户ID
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId != null)
+            {
+                Account.UserId = currentUserId;
+            }
+
             // 过滤空的安全问题
             var validSecurityQuestions = SecurityQuestions
                 .Where(sq => !string.IsNullOrWhiteSpace(sq.Question) && !string.IsNullOrWhiteSpace(sq.Answer))

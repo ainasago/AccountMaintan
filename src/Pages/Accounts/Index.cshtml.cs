@@ -10,10 +10,12 @@ namespace WebUI.Pages.Accounts;
 public class IndexModel : PageModel
 {
     private readonly IAccountService _accountService;
+    private readonly IAdminService _adminService;
 
-    public IndexModel(IAccountService accountService)
+    public IndexModel(IAccountService accountService, IAdminService adminService)
     {
         _accountService = accountService;
+        _adminService = adminService;
     }
 
     public List<WebUI.Models.Account> Accounts { get; set; } = new();
@@ -32,11 +34,39 @@ public class IndexModel : PageModel
 
         try
         {
-            // 获取总数
-            var allAccounts = await _accountService.SearchAccountsAsync(
-                SearchModel.Keyword, 
-                SearchModel.Category, 
-                SearchModel.Tags);
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return;
+            }
+
+            // 检查是否为管理员
+            var isAdmin = await _adminService.IsAdminAsync(currentUserId);
+            List<WebUI.Models.Account> allAccounts;
+            
+            if (isAdmin)
+            {
+                // 管理员可以看到所有账号
+                allAccounts = await _accountService.SearchAccountsAsync(
+                    SearchModel.Keyword, 
+                    SearchModel.Category, 
+                    SearchModel.Tags);
+            }
+            else
+            {
+                // 普通用户只能看到自己的账号
+                var userAccounts = await _accountService.GetUserAccountsAsync(currentUserId);
+                allAccounts = userAccounts.Where(a => 
+                    (string.IsNullOrEmpty(SearchModel.Keyword) || 
+                     a.Name.Contains(SearchModel.Keyword, StringComparison.OrdinalIgnoreCase) ||
+                     (a.Username?.Contains(SearchModel.Keyword, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                     (a.Notes?.Contains(SearchModel.Keyword, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+                    (string.IsNullOrEmpty(SearchModel.Category) || 
+                     a.Category == SearchModel.Category) &&
+                    (string.IsNullOrEmpty(SearchModel.Tags) || 
+                     (a.Tags?.Contains(SearchModel.Tags, StringComparison.OrdinalIgnoreCase) ?? false))
+                ).ToList();
+            }
             
             TotalCount = allAccounts.Count;
             TotalPages = (int)Math.Ceiling((double)TotalCount / PageSize);
@@ -49,7 +79,7 @@ public class IndexModel : PageModel
             Console.WriteLine($"获取到 {TotalCount} 个账号，当前页显示 {Accounts.Count} 个");
             if (Accounts.Any())
             {
-                Console.WriteLine($"第一个账号: {Accounts.First().Name} - {Accounts.First().Username}");
+                Console.WriteLine($"第一个账号: {Accounts.First().Name} - {Accounts.First().Username ?? "无用户名"}");
             }
         }
         catch (Exception ex)

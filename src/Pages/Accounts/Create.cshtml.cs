@@ -52,11 +52,17 @@ public class CreateModel : PageModel
 
         try
         {
+            // 设置用户ID
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId != null)
+            {
+                Account.UserId = currentUserId;
+            }
             
-                // 过滤空的安全问题
-                var validSecurityQuestions = SecurityQuestions
-                    .Where(sq => !string.IsNullOrWhiteSpace(sq.Question) && !string.IsNullOrWhiteSpace(sq.Answer))
-                    .ToList();
+            // 过滤空的安全问题
+            var validSecurityQuestions = SecurityQuestions
+                .Where(sq => !string.IsNullOrWhiteSpace(sq.Question) && !string.IsNullOrWhiteSpace(sq.Answer))
+                .ToList();
             if (validSecurityQuestions.Count > 0)
             {
                 Account.SecurityQuestions = validSecurityQuestions;

@@ -14,9 +14,19 @@ public interface IAccountService
     Task<List<Account>> GetAllAccountsAsync();
     
     /// <summary>
+    /// 获取指定用户的所有账号
+    /// </summary>
+    Task<List<Account>> GetUserAccountsAsync(string userId);
+    
+    /// <summary>
     /// 根据ID获取账号
     /// </summary>
     Task<Account?> GetAccountByIdAsync(Guid id);
+    
+    /// <summary>
+    /// 根据ID和用户ID获取账号
+    /// </summary>
+    Task<Account?> GetUserAccountByIdAsync(Guid id, string userId);
     
     /// <summary>
     /// 创建账号
@@ -113,6 +123,25 @@ public class AccountService : IAccountService
         }
     }
 
+    public async Task<List<Account>> GetUserAccountsAsync(string userId)
+    {
+        _logger.LogDebug("开始获取用户 {UserId} 的账号", userId);
+        try
+        {
+            var accounts = await _context.Fsql.Select<Account>()
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+            _logger.LogDebug("成功获取用户 {UserId} 的 {Count} 个账号", userId, accounts.Count);
+            return accounts;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户 {UserId} 的账号失败", userId);
+            throw;
+        }
+    }
+
     public async Task<Account?> GetAccountByIdAsync(Guid id)
     {
         _logger.LogDebug("开始获取账号: {AccountId}", id);
@@ -134,6 +163,31 @@ public class AccountService : IAccountService
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取账号失败: {AccountId}", id);
+            throw;
+        }
+    }
+
+    public async Task<Account?> GetUserAccountByIdAsync(Guid id, string userId)
+    {
+        _logger.LogDebug("开始获取用户 {UserId} 的账号: {AccountId}", userId, id);
+        try
+        {
+            var account = await _context.Fsql.Select<Account>()
+                .Where(a => a.Id == id && a.UserId == userId)
+                .FirstAsync();
+            if (account != null)
+            {
+                _logger.LogDebug("成功获取用户 {UserId} 的账号: {AccountName} ({AccountId})", userId, account.Name, id);
+            }
+            else
+            {
+                _logger.LogDebug("用户 {UserId} 的账号不存在: {AccountId}", userId, id);
+            }
+            return account;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户 {UserId} 的账号失败: {AccountId}", userId, id);
             throw;
         }
     }
@@ -263,8 +317,8 @@ public class AccountService : IAccountService
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(a => a.Name.Contains(keyword) || 
-                                       a.Username.Contains(keyword) || 
-                                       a.Notes.Contains(keyword));
+                                       (a.Username != null && a.Username.Contains(keyword)) || 
+                                       (a.Notes != null && a.Notes.Contains(keyword)));
             }
 
             if (!string.IsNullOrEmpty(category))
@@ -274,7 +328,7 @@ public class AccountService : IAccountService
 
             if (!string.IsNullOrEmpty(tags))
             {
-                query = query.Where(a => a.Tags.Contains(tags));
+                query = query.Where(a => a.Tags != null && a.Tags.Contains(tags));
             }
 
             var result = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
@@ -350,13 +404,13 @@ public class AccountService : IAccountService
                 return value;
             }
 
-            var decryptedPassword = _encryptionService.Decrypt(a.Password);
+            var decryptedPassword = _encryptionService.Decrypt(a.Password ?? string.Empty);
             var decryptedKey = string.IsNullOrEmpty(a.AuthenticatorKey) ? string.Empty : _encryptionService.Decrypt(a.AuthenticatorKey);
 
             var line = string.Join(',', new[]
             {
                 Escape(a.Name),
-                Escape(a.Username),
+                Escape(a.Username ?? string.Empty),
                 Escape(decryptedPassword),
                 Escape(a.Url ?? string.Empty),
                 Escape(a.Notes ?? string.Empty),
@@ -539,8 +593,8 @@ public class AccountService : IAccountService
         foreach (var a in accounts)
         {
             ws.Cell(row, 1).Value = a.Name;
-            ws.Cell(row, 2).Value = a.Username;
-            ws.Cell(row, 3).Value = _encryptionService.Decrypt(a.Password);
+            ws.Cell(row, 2).Value = a.Username ?? string.Empty;
+            ws.Cell(row, 3).Value = _encryptionService.Decrypt(a.Password ?? string.Empty);
             ws.Cell(row, 4).Value = a.Url ?? string.Empty;
             ws.Cell(row, 5).Value = a.Notes ?? string.Empty;
             ws.Cell(row, 6).Value = a.Tags ?? string.Empty;

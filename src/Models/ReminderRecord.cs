@@ -16,6 +16,12 @@ public class ReminderRecord
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
+    /// 用户ID
+    /// </summary>
+    [Column(StringLength = 450, IsNullable = false)]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
     /// 账号ID（测试时为null）
     /// </summary>
     [Column(DbType = "TEXT")]
