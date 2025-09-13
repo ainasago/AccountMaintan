@@ -100,7 +100,7 @@ public class AdminController : ControllerBase
             }
 
             var result = await _adminService.ToggleUserStatusAsync(id);
-            return Ok(result);
+            return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
         {
@@ -124,7 +124,7 @@ public class AdminController : ControllerBase
             }
 
             var result = await _adminService.ToggleAdminStatusAsync(id);
-            return Ok(result);
+            return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
         {
@@ -148,7 +148,7 @@ public class AdminController : ControllerBase
             }
 
             var result = await _adminService.DeleteUserAsync(id);
-            return Ok(result);
+            return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
         {

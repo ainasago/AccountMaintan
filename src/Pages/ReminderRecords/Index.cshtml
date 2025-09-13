@@ -167,13 +167,54 @@
 
 @section Scripts {
     <script>
+        // 全局变量
+        let csrfToken = null;
         let currentPage = 1;
         let currentPageSize = 20;
         let currentRecordType = '';
         let currentStatus = '';
 
+        // 初始化CSRF令牌
+        async function initializeCsrfToken() {
+            try {
+                console.log('正在获取CSRF令牌...');
+                const response = await fetch('/api/admin/csrf-token', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                console.log('CSRF令牌响应状态:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('CSRF令牌响应数据:', data);
+                    if (data.success) {
+                        csrfToken = data.token;
+                        console.log('CSRF令牌已获取:', csrfToken.substring(0, 8) + '...');
+                    } else {
+                        console.error('CSRF令牌获取失败:', data.message);
+                    }
+                } else {
+                    console.error('CSRF令牌请求失败:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('获取CSRF令牌失败:', error);
+            }
+        }
+
+        // 获取CSRF令牌（如果不存在则重新获取）
+        async function getCsrfToken() {
+            if (!csrfToken) {
+                await initializeCsrfToken();
+            }
+            return csrfToken;
+        }
+
         // 页面加载时初始化
         $(document).ready(function() {
+            // 初始化CSRF令牌
+            initializeCsrfToken();
+            
             loadStats();
             loadRecords();
             
@@ -397,8 +438,17 @@
             if (!confirm('确定要删除这条记录吗？')) return;
 
             try {
+                const token = await getCsrfToken();
+                const headers = {};
+                
+                if (token) {
+                    headers['X-CSRF-TOKEN'] = token;
+                }
+
                 const response = await fetch(`/api/ReminderRecords/${recordId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: headers,
+                    credentials: 'include'
                 });
 
                 if (response.ok) {
@@ -406,8 +456,12 @@
                     loadStats();
                     loadRecords();
                 } else {
-                    const error = await response.json();
-                    showToast(error.message || '删除记录失败', 'error');
+                    if (response.status === 403) {
+                        showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                    } else {
+                        const error = await response.json();
+                        showToast(error.message || '删除记录失败', 'error');
+                    }
                 }
             } catch (error) {
                 console.error('删除记录失败:', error);
@@ -420,8 +474,17 @@
             if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) return;
 
             try {
+                const token = await getCsrfToken();
+                const headers = {};
+                
+                if (token) {
+                    headers['X-CSRF-TOKEN'] = token;
+                }
+
                 const response = await fetch('/api/ReminderRecords/clear', {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: headers,
+                    credentials: 'include'
                 });
 
                 if (response.ok) {
@@ -429,8 +492,12 @@
                     loadStats();
                     loadRecords();
                 } else {
-                    const error = await response.json();
-                    showToast(error.message || '清空记录失败', 'error');
+                    if (response.status === 403) {
+                        showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                    } else {
+                        const error = await response.json();
+                        showToast(error.message || '清空记录失败', 'error');
+                    }
                 }
             } catch (error) {
                 console.error('清空记录失败:', error);
