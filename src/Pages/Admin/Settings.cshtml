@@ -179,18 +179,19 @@
 
                 try {
                     const token = await getCsrfToken();
-                    const headers = {
-                        'Content-Type': 'application/json'
-                    };
                     
-                    if (token) {
-                        headers['X-CSRF-TOKEN'] = token;
-                    }
+                    // 设置jQuery的全局AJAX设置
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            if (token) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            }
+                        }
+                    });
 
                     $.ajax({
                         url: '/api/admin/settings',
                         type: 'POST',
-                        headers: headers,
                         contentType: 'application/json',
                         data: JSON.stringify(formData),
                         success: function(response) {

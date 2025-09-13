@@ -29,7 +29,7 @@
     "NotificationIcon": "/favicon.ico"
   },
   "Reminder": {
-    "CheckInterval": "0 0/1 * * * ?",
+    "CheckInterval": "",
     "DefaultReminderCycle": 1,
     "EnableAutoReminder": true,
     "ReminderHour": 9,

@@ -229,18 +229,19 @@
 
                 try {
                     const token = await getCsrfToken();
-                    const headers = {
-                        'Content-Type': 'application/json'
-                    };
                     
-                    if (token) {
-                        headers['X-CSRF-TOKEN'] = token;
-                    }
+                    // 设置jQuery的全局AJAX设置
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            if (token) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            }
+                        }
+                    });
 
                     $.ajax({
                         url: '/api/admin/users',
                         type: 'POST',
-                        headers: headers,
                         contentType: 'application/json',
                         data: JSON.stringify(formData),
                         success: function(response) {
@@ -270,16 +271,19 @@
             if (confirm(`确定要${action}该用户吗？`)) {
                 try {
                     const token = await getCsrfToken();
-                    const headers = {};
                     
-                    if (token) {
-                        headers['X-CSRF-TOKEN'] = token;
-                    }
+                    // 设置jQuery的全局AJAX设置
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            if (token) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            }
+                        }
+                    });
 
                     $.ajax({
                         url: `/api/admin/users/${userId}/toggle-status`,
                         type: 'POST',
-                        headers: headers,
                         success: function(response) {
                             if (response.success) {
                                 location.reload();
@@ -307,16 +311,19 @@
             if (confirm(`确定要${action}吗？`)) {
                 try {
                     const token = await getCsrfToken();
-                    const headers = {};
                     
-                    if (token) {
-                        headers['X-CSRF-TOKEN'] = token;
-                    }
+                    // 设置jQuery的全局AJAX设置
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            if (token) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            }
+                        }
+                    });
 
                     $.ajax({
                         url: `/api/admin/users/${userId}/toggle-admin`,
                         type: 'POST',
-                        headers: headers,
                         success: function(response) {
                             if (response.success) {
                                 location.reload();
@@ -343,16 +350,19 @@
             if (confirm('确定要删除该用户吗？此操作不可恢复！')) {
                 try {
                     const token = await getCsrfToken();
-                    const headers = {};
                     
-                    if (token) {
-                        headers['X-CSRF-TOKEN'] = token;
-                    }
+                    // 设置jQuery的全局AJAX设置
+                    $.ajaxSetup({
+                        beforeSend: function(xhr) {
+                            if (token) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            }
+                        }
+                    });
 
                     $.ajax({
                         url: `/api/admin/users/${userId}`,
                         type: 'DELETE',
-                        headers: headers,
                         success: function(response) {
                             if (response.success) {
                                 location.reload();
