@@ -216,6 +216,23 @@ using (var scope = app.Services.CreateScope())
     // 启动提醒调度
     var reminderScheduler = scope.ServiceProvider.GetRequiredService<IReminderSchedulerService>();
     await reminderScheduler.StartReminderSchedulerAsync();
+    
+    // 为每个现有用户启动独立的提醒调度
+    var accountService = scope.ServiceProvider.GetRequiredService<IAccountService>();
+    var allAccounts = await accountService.GetAllAccountsAsync();
+    var userIds = allAccounts.Select(a => a.UserId).Distinct().ToList();
+    
+    foreach (var userId in userIds)
+    {
+        try
+        {
+            await reminderScheduler.StartUserReminderSchedulerAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "为用户 {UserId} 启动提醒调度失败", userId);
+        }
+    }
 }
 
 app.Run();

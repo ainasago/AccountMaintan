@@ -11,7 +11,9 @@ public class ReminderSchedulerService : IReminderSchedulerService
     private readonly ILogger<ReminderSchedulerService> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private const string RecurringJobId = "reminder-check-job";
+    private const string UserJobIdPrefix = "reminder-check-user-";
     private volatile bool _isRunning;
+    private readonly Dictionary<string, bool> _userJobStatus = new();
 
     public ReminderSchedulerService(
         ILogger<ReminderSchedulerService> logger,
@@ -98,6 +100,94 @@ public class ReminderSchedulerService : IReminderSchedulerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "手动触发提醒检查失败");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 为特定用户启动提醒调度
+    /// </summary>
+    public async Task StartUserReminderSchedulerAsync(string userId)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var settingsService = scope.ServiceProvider.GetRequiredService<INotificationSettingsService>();
+            var settings = await settingsService.GetSettingsAsync();
+            
+            if (!settings.Reminder.EnableAutoReminder)
+            {
+                _logger.LogInformation("自动提醒已禁用，跳过用户 {UserId} 的调度启动", userId);
+                return;
+            }
+
+            var userJobId = $"{UserJobIdPrefix}{userId}";
+            var checkInterval = settings.Reminder.CheckInterval;
+            
+            // 如果已经在运行，先停止再重新启动
+            if (_userJobStatus.ContainsKey(userId) && _userJobStatus[userId])
+            {
+                _logger.LogInformation("用户 {UserId} 的调度器已在运行，重新启动以应用新设置", userId);
+                RecurringJob.RemoveIfExists(userJobId);
+                _userJobStatus[userId] = false;
+            }
+
+            // 创建/更新用户级别的定时任务
+            RecurringJob.AddOrUpdate<WebUI.Jobs.ReminderCheckJob>(
+                userJobId,
+                job => job.ExecuteForUserAsync(userId),
+                checkInterval);
+
+            _userJobStatus[userId] = true;
+            _logger.LogInformation("用户 {UserId} 的提醒调度已启动，检查间隔: {Interval}", userId, checkInterval);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "启动用户 {UserId} 的提醒调度失败", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 停止特定用户的提醒调度
+    /// </summary>
+    public async Task StopUserReminderSchedulerAsync(string userId)
+    {
+        try
+        {
+            var userJobId = $"{UserJobIdPrefix}{userId}";
+            RecurringJob.RemoveIfExists(userJobId);
+            
+            if (_userJobStatus.ContainsKey(userId))
+            {
+                _userJobStatus[userId] = false;
+            }
+            
+            _logger.LogInformation("用户 {UserId} 的提醒调度已停止", userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "停止用户 {UserId} 的提醒调度失败", userId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 为特定用户手动触发提醒检查
+    /// </summary>
+    public async Task TriggerUserReminderCheckAsync(string userId)
+    {
+        try
+        {
+            // 创建一次性任务
+            var jobId = BackgroundJob.Enqueue<WebUI.Jobs.ReminderCheckJob>(
+                job => job.ExecuteForUserAsync(userId));
+            
+            _logger.LogInformation("手动触发用户 {UserId} 的提醒检查，任务ID: {JobId}", userId, jobId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "手动触发用户 {UserId} 的提醒检查失败", userId);
             throw;
         }
     }

@@ -270,6 +270,57 @@ namespace WebUI.Controllers
                 return Ok(new { success = false, message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// 为特定用户启动提醒调度
+        /// </summary>
+        [HttpPost("users/{userId}/start")]
+        public async Task<IActionResult> StartUserScheduler(string userId)
+        {
+            try
+            {
+                await _schedulerService.StartUserReminderSchedulerAsync(userId);
+                return Ok(new { success = true, message = $"用户 {userId} 的提醒调度已启动" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 停止特定用户的提醒调度
+        /// </summary>
+        [HttpPost("users/{userId}/stop")]
+        public async Task<IActionResult> StopUserScheduler(string userId)
+        {
+            try
+            {
+                await _schedulerService.StopUserReminderSchedulerAsync(userId);
+                return Ok(new { success = true, message = $"用户 {userId} 的提醒调度已停止" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 为特定用户手动触发提醒检查
+        /// </summary>
+        [HttpPost("users/{userId}/trigger")]
+        public async Task<IActionResult> TriggerUserReminderCheck(string userId)
+        {
+            try
+            {
+                await _schedulerService.TriggerUserReminderCheckAsync(userId);
+                return Ok(new { success = true, message = $"用户 {userId} 的提醒检查已触发" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, message = ex.Message });
+            }
+        }
     }
 
     public class SetReminderRequest
@@ -282,6 +333,6 @@ namespace WebUI.Controllers
         public int DefaultReminderCycle { get; set; }
         public int ReminderHour { get; set; }
         public int ReminderMinute { get; set; }
-        public string CheckInterval { get; set; }
+        public string CheckInterval { get; set; } = string.Empty;
     }
 }

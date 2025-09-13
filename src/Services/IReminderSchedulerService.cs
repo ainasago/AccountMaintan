@@ -26,4 +26,19 @@ public interface IReminderSchedulerService
     /// 获取调度状态
     /// </summary>
     Task<object> GetStatusAsync();
+
+    /// <summary>
+    /// 为特定用户启动提醒调度
+    /// </summary>
+    Task StartUserReminderSchedulerAsync(string userId);
+
+    /// <summary>
+    /// 停止特定用户的提醒调度
+    /// </summary>
+    Task StopUserReminderSchedulerAsync(string userId);
+
+    /// <summary>
+    /// 为特定用户手动触发提醒检查
+    /// </summary>
+    Task TriggerUserReminderCheckAsync(string userId);
 }

@@ -25,7 +25,7 @@ public class ReminderNotificationService : IReminderNotificationService
     /// <summary>
     /// 发送提醒通知
     /// </summary>
-    public async Task SendReminderNotificationAsync(Guid accountId, string accountName)
+    public async Task SendReminderNotificationAsync(Guid accountId, string accountName, string? userId = null)
     {
         try
         {
@@ -43,12 +43,12 @@ public class ReminderNotificationService : IReminderNotificationService
 
             if (settings.Email.IsEnabled)
             {
-                tasks.Add(SendEmailNotificationAsync(accountId, accountName));
+                tasks.Add(SendEmailNotificationAsync(accountId, accountName, userId));
             }
 
             if (settings.Telegram.IsEnabled)
             {
-                tasks.Add(SendTelegramNotificationAsync(accountId, accountName));
+                tasks.Add(SendTelegramNotificationAsync(accountId, accountName, userId));
             }
 
             if (tasks.Any())
@@ -68,7 +68,7 @@ public class ReminderNotificationService : IReminderNotificationService
     /// <summary>
     /// 发送SignalR通知
     /// </summary>
-    public async Task SendSignalRNotificationAsync(Guid accountId, string accountName)
+    public async Task SendSignalRNotificationAsync(Guid accountId, string accountName, string? userId = null)
     {
         try
         {
@@ -84,10 +84,18 @@ public class ReminderNotificationService : IReminderNotificationService
                 Icon = settings.SignalR.NotificationIcon
             };
 
-            // 发送到所有连接的客户端
-            await _hubContext.Clients.All.SendAsync("ReceiveReminder", reminder);
-
-            _logger.LogInformation("SignalR通知发送成功: {AccountName}", accountName);
+            // 如果指定了用户ID，只发送给该用户；否则发送给所有用户
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await _hubContext.Clients.User(userId).SendAsync("ReceiveReminder", reminder);
+                _logger.LogInformation("SignalR通知发送成功给用户 {UserId}: {AccountName}", userId, accountName);
+            }
+            else
+            {
+                // 发送到所有连接的客户端（保持向后兼容）
+                await _hubContext.Clients.All.SendAsync("ReceiveReminder", reminder);
+                _logger.LogInformation("SignalR通知发送成功给所有用户: {AccountName}", accountName);
+            }
         }
         catch (Exception ex)
         {
@@ -98,7 +106,7 @@ public class ReminderNotificationService : IReminderNotificationService
     /// <summary>
     /// 发送邮件通知
     /// </summary>
-    public async Task SendEmailNotificationAsync(Guid accountId, string accountName)
+    public async Task SendEmailNotificationAsync(Guid accountId, string accountName, string? userId = null)
     {
         try
         {
@@ -110,7 +118,7 @@ public class ReminderNotificationService : IReminderNotificationService
             }
 
             // 使用模板发送邮件
-            var ok = await _settingsService.SendEmailWithTemplateAsync(accountName, accountId.ToString());
+            var ok = await _settingsService.SendEmailWithTemplateAsync(accountName, accountId.ToString(), userId);
             if (ok)
                 _logger.LogInformation("邮件通知发送成功: {AccountName}", accountName);
             else
@@ -125,7 +133,7 @@ public class ReminderNotificationService : IReminderNotificationService
     /// <summary>
     /// 发送Telegram通知
     /// </summary>
-    public async Task SendTelegramNotificationAsync(Guid accountId, string accountName)
+    public async Task SendTelegramNotificationAsync(Guid accountId, string accountName, string? userId = null)
     {
         try
         {
@@ -137,7 +145,7 @@ public class ReminderNotificationService : IReminderNotificationService
             }
 
             // 使用模板发送Telegram消息
-            var ok = await _settingsService.SendTelegramWithTemplateAsync(accountName, accountId.ToString());
+            var ok = await _settingsService.SendTelegramWithTemplateAsync(accountName, accountId.ToString(), userId);
             if (ok)
                 _logger.LogInformation("Telegram通知发送成功: {AccountName}", accountName);
             else
