@@ -1,9 +1,49 @@
 // 仪表板JavaScript文件
 
+// 全局变量
+let csrfToken = null;
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initializeDashboard();
+    initializeCsrfToken();
 });
+
+// 初始化CSRF令牌
+async function initializeCsrfToken() {
+    try {
+        console.log('正在获取CSRF令牌...');
+        const response = await fetch('/api/admin/csrf-token', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        console.log('CSRF令牌响应状态:', response.status);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('CSRF令牌响应数据:', data);
+            if (data.success) {
+                csrfToken = data.token;
+                console.log('CSRF令牌已获取:', csrfToken.substring(0, 8) + '...');
+            } else {
+                console.error('CSRF令牌获取失败:', data.message);
+            }
+        } else {
+            console.error('CSRF令牌请求失败:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('获取CSRF令牌失败:', error);
+    }
+}
+
+// 获取CSRF令牌（如果不存在则重新获取）
+async function getCsrfToken() {
+    if (!csrfToken) {
+        await initializeCsrfToken();
+    }
+    return csrfToken;
+}
 
 // 初始化仪表板
 function initializeDashboard() {
@@ -14,8 +54,17 @@ function initializeDashboard() {
 // 记录账号访问
 async function recordVisit(accountId) {
     try {
+        const token = await getCsrfToken();
+        const headers = {};
+        
+        if (token) {
+            headers['X-CSRF-TOKEN'] = token;
+        }
+        
         const response = await fetch(`/api/accounts/${accountId}/visit`, {
-            method: 'POST'
+            method: 'POST',
+            headers: headers,
+            credentials: 'include'
         });
 
         if (response.ok) {
