@@ -131,6 +131,11 @@
                     <div class="mb-3">
                         <label for="password" class="form-label">密码</label>
                         <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="form-text">
+                            <small class="text-muted">
+                                密码要求：至少12个字符，包含大小写字母、数字和特殊字符，不能包含用户名或常见模式
+                            </small>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="confirmPassword" class="form-label">确认密码</label>
@@ -210,6 +215,64 @@
                 order: [[4, 'desc']]
             });
 
+            // 密码强度验证
+            function validatePassword(password) {
+                const errors = [];
+                
+                if (password.length < 12) {
+                    errors.push('密码长度至少需要12个字符');
+                }
+                
+                if (!/[a-z]/.test(password)) {
+                    errors.push('密码必须包含至少一个小写字母');
+                }
+                
+                if (!/[A-Z]/.test(password)) {
+                    errors.push('密码必须包含至少一个大写字母');
+                }
+                
+                if (!/[0-9]/.test(password)) {
+                    errors.push('密码必须包含至少一个数字');
+                }
+                
+                if (!/[^a-zA-Z0-9]/.test(password)) {
+                    errors.push('密码必须包含至少一个特殊字符');
+                }
+                
+                // 检查重复字符
+                if (/(.)\1{2,}/.test(password)) {
+                    errors.push('密码不能包含超过2个连续相同字符');
+                }
+                
+                // 检查常见模式
+                const commonPatterns = ['qwerty', 'asdf', 'zxcv', '1234', 'abcd'];
+                if (commonPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
+                    errors.push('密码不能包含常见的键盘模式');
+                }
+                
+                return errors;
+            }
+
+            // 实时密码验证
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                const errors = validatePassword(password);
+                let errorContainer = $(this).siblings('.password-errors');
+                
+                if (errorContainer.length === 0) {
+                    $(this).after('<div class="password-errors text-danger small mt-1"></div>');
+                    errorContainer = $(this).siblings('.password-errors');
+                }
+                
+                if (errors.length > 0) {
+                    errorContainer.html(errors.join('<br>')).show();
+                    $(this).addClass('is-invalid');
+                } else {
+                    errorContainer.hide();
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            });
+
             // 添加用户表单提交
             $('#addUserForm').on('submit', async function(e) {
                 e.preventDefault();
@@ -221,6 +284,13 @@
                     confirmPassword: $('#confirmPassword').val(),
                     isAdmin: $('#isAdmin').is(':checked')
                 };
+
+                // 验证密码
+                const passwordErrors = validatePassword(formData.password);
+                if (passwordErrors.length > 0) {
+                    alert('密码不符合要求：\n' + passwordErrors.join('\n'));
+                    return;
+                }
 
                 if (formData.password !== formData.confirmPassword) {
                     alert('密码和确认密码不匹配');
@@ -248,15 +318,29 @@
                             if (response.success) {
                                 location.reload();
                             } else {
-                                alert('添加用户失败: ' + response.message);
+                                const errorMessage = response.message || '未知错误';
+                                alert('添加用户失败: ' + errorMessage);
                             }
                         },
                         error: function(xhr) {
+                            let errorMessage = '添加用户时发生错误';
+                            
                             if (xhr.status === 403) {
-                                alert('CSRF令牌验证失败，请刷新页面重试');
-                            } else {
-                                alert('添加用户时发生错误');
+                                errorMessage = 'CSRF令牌验证失败，请刷新页面重试';
+                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.message) {
+                                        errorMessage = response.message;
+                                    }
+                                } catch (e) {
+                                    // 如果解析失败，使用默认错误信息
+                                }
                             }
+                            
+                            alert('添加用户失败: ' + errorMessage);
                         }
                     });
                 } catch (error) {
