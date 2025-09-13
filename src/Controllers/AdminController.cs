@@ -66,14 +66,16 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            // 解密密码
+            // 解密密码和确认密码
             string decryptedPassword;
+            string decryptedConfirmPassword;
             try
             {
                 _logger.LogInformation("开始解密密码，加密密码长度: {Length}, 令牌长度: {TokenLength}", 
                     request.EncryptedPassword?.Length ?? 0, request.EncryptionToken?.Length ?? 0);
                 
                 decryptedPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedPassword, request.EncryptionToken);
+                decryptedConfirmPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedConfirmPassword, request.EncryptionToken);
                 
                 _logger.LogInformation("密码解密成功，解密后长度: {Length}", decryptedPassword?.Length ?? 0);
             }
@@ -84,7 +86,7 @@ public class AdminController : ControllerBase
                 return BadRequest(new { success = false, message = "密码解密失败，请刷新页面重试" });
             }
 
-            if (decryptedPassword != request.ConfirmPassword)
+            if (decryptedPassword != decryptedConfirmPassword)
             {
                 return BadRequest(new { success = false, message = "密码和确认密码不匹配" });
             }
@@ -319,7 +321,7 @@ public class CreateUserRequest
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string EncryptedPassword { get; set; } = string.Empty;
-    public string ConfirmPassword { get; set; } = string.Empty;
+    public string EncryptedConfirmPassword { get; set; } = string.Empty;
     public string EncryptionToken { get; set; } = string.Empty;
     public bool IsAdmin { get; set; } = false;
 }

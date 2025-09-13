@@ -389,14 +389,15 @@
                         return;
                     }
 
-                    // 加密密码
+                    // 加密密码和确认密码
                     const encryptedPassword = await encryptPassword(formData.password, encryptionToken);
+                    const encryptedConfirmPassword = await encryptPassword(formData.confirmPassword, encryptionToken);
                     
                     const requestData = {
                         displayName: formData.displayName,
                         email: formData.email,
                         encryptedPassword: encryptedPassword,
-                        confirmPassword: formData.confirmPassword,
+                        encryptedConfirmPassword: encryptedConfirmPassword,
                         encryptionToken: encryptionToken,
                         isAdmin: formData.isAdmin
                     };
