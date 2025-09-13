@@ -19,8 +19,8 @@ public class PasswordEncryptionService : IPasswordEncryptionService
         _logger = logger;
         _configuration = configuration;
         
-        // 从配置中获取加密密钥，如果没有则生成一个
-        _encryptionKey = _configuration["PasswordEncryption:Key"] ?? GenerateRandomKey();
+        // 从配置中获取加密密钥，如果没有则使用默认密钥（与前端保持一致）
+        _encryptionKey = _configuration["PasswordEncryption:Key"] ?? "AccountManagerPasswordEncryptionKey2024!";
     }
 
     /// <summary>
@@ -94,6 +94,9 @@ public class PasswordEncryptionService : IPasswordEncryptionService
     {
         try
         {
+            _logger.LogDebug("开始解密密码，加密密码长度: {Length}, 令牌长度: {TokenLength}", 
+                encryptedPassword?.Length ?? 0, token?.Length ?? 0);
+
             if (string.IsNullOrEmpty(encryptedPassword))
             {
                 throw new ArgumentException("加密密码不能为空", nameof(encryptedPassword));
@@ -107,24 +110,35 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             // 验证令牌
             if (!IsTokenValid(token))
             {
+                _logger.LogWarning("令牌验证失败，令牌: {Token}", token);
                 throw new InvalidOperationException("令牌已过期或无效");
             }
 
-            // 解密密码（使用AES-GCM方式，与前端保持一致）
+            _logger.LogDebug("令牌验证通过，开始解密数据");
+
+            // 解密密码（使用AES-CBC方式，与前端保持一致）
             var decryptedData = DecryptAesGcm(encryptedPassword, _encryptionKey);
+            _logger.LogDebug("数据解密完成，解密后长度: {Length}", decryptedData?.Length ?? 0);
+            
             var parts = decryptedData.Split(':', 2);
+            _logger.LogDebug("分割后部分数量: {Count}", parts.Length);
             
             if (parts.Length != 2)
             {
+                _logger.LogError("解密数据格式无效，分割后部分数量: {Count}, 数据: {Data}", parts.Length, decryptedData);
                 throw new InvalidOperationException("解密数据格式无效");
             }
 
             var password = parts[0];
             var tokenFromData = parts[1];
 
+            _logger.LogDebug("提取的密码长度: {PasswordLength}, 令牌长度: {TokenLength}", 
+                password?.Length ?? 0, tokenFromData?.Length ?? 0);
+
             // 验证令牌是否匹配
             if (token != tokenFromData)
             {
+                _logger.LogError("令牌不匹配，期望: {Expected}, 实际: {Actual}", token, tokenFromData);
                 throw new InvalidOperationException("令牌不匹配");
             }
 
@@ -133,7 +147,8 @@ public class PasswordEncryptionService : IPasswordEncryptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "密码解密失败");
+            _logger.LogError(ex, "密码解密失败，加密密码: {EncryptedPassword}, 令牌: {Token}", 
+                encryptedPassword, token);
             throw;
         }
     }

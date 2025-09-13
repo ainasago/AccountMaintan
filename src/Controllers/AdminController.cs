@@ -70,11 +70,17 @@ public class AdminController : ControllerBase
             string decryptedPassword;
             try
             {
+                _logger.LogInformation("开始解密密码，加密密码长度: {Length}, 令牌长度: {TokenLength}", 
+                    request.EncryptedPassword?.Length ?? 0, request.EncryptionToken?.Length ?? 0);
+                
                 decryptedPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedPassword, request.EncryptionToken);
+                
+                _logger.LogInformation("密码解密成功，解密后长度: {Length}", decryptedPassword?.Length ?? 0);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "密码解密失败");
+                _logger.LogError(ex, "密码解密失败，加密密码: {EncryptedPassword}, 令牌: {Token}", 
+                    request.EncryptedPassword, request.EncryptionToken);
                 return BadRequest(new { success = false, message = "密码解密失败，请刷新页面重试" });
             }
 
