@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Hosting;
 
 namespace WebUI.Middleware;
 
@@ -55,17 +56,32 @@ public class ApiSecurityMiddleware
         // XSS保护
         response.Headers["X-XSS-Protection"] = "1; mode=block";
 
-        // 内容安全策略
-        response.Headers["Content-Security-Policy"] = 
-            "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+        // 内容安全策略 - 修复资源加载问题
+        var csp = "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "img-src 'self' data: https:; " +
-            "font-src 'self' https://cdn.jsdelivr.net; " +
-            "connect-src 'self' wss: ws:; " +
+            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://at.alicdn.com; " +
+            "connect-src 'self' wss: ws: http://localhost:*; " + // 允许开发环境的Browser Link
             "frame-ancestors 'none'; " +
             "base-uri 'self'; " +
             "form-action 'self'";
+        
+        // 在开发环境中放宽CSP限制
+        if (context.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
+        {
+            csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; " +
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
+                "style-src 'self' 'unsafe-inline' https:; " +
+                "img-src 'self' data: https:; " +
+                "font-src 'self' data: https:; " +
+                "connect-src 'self' wss: ws: http: https:; " +
+                "frame-ancestors 'none'; " +
+                "base-uri 'self'; " +
+                "form-action 'self'";
+        }
+        
+        response.Headers["Content-Security-Policy"] = csp;
 
         // 严格传输安全（仅HTTPS）
         if (context.Request.IsHttps)
