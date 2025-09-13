@@ -16,11 +16,16 @@ public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
     private readonly ILogger<AdminController> _logger;
+    private readonly IPasswordEncryptionService _passwordEncryptionService;
 
-    public AdminController(IAdminService adminService, ILogger<AdminController> logger)
+    public AdminController(
+        IAdminService adminService, 
+        ILogger<AdminController> logger,
+        IPasswordEncryptionService passwordEncryptionService)
     {
         _adminService = adminService;
         _logger = logger;
+        _passwordEncryptionService = passwordEncryptionService;
     }
 
     /// <summary>
@@ -61,7 +66,19 @@ public class AdminController : ControllerBase
                 return Forbid();
             }
 
-            if (request.Password != request.ConfirmPassword)
+            // 解密密码
+            string decryptedPassword;
+            try
+            {
+                decryptedPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedPassword, request.EncryptionToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "密码解密失败");
+                return BadRequest(new { success = false, message = "密码解密失败，请刷新页面重试" });
+            }
+
+            if (decryptedPassword != request.ConfirmPassword)
             {
                 return BadRequest(new { success = false, message = "密码和确认密码不匹配" });
             }
@@ -75,7 +92,7 @@ public class AdminController : ControllerBase
                 CreatedAt = DateTime.Now
             };
 
-            var result = await _adminService.CreateUserAsync(user, request.Password);
+            var result = await _adminService.CreateUserAsync(user, decryptedPassword);
             return Ok(new { success = result.success, message = result.message });
         }
         catch (Exception ex)
@@ -209,6 +226,36 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// 获取密码加密令牌
+    /// </summary>
+    [HttpGet("password-encryption-token")]
+    public IActionResult GetPasswordEncryptionToken()
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null || !_adminService.IsAdminAsync(currentUserId).Result)
+            {
+                return Forbid();
+            }
+
+            var token = _passwordEncryptionService.GenerateEncryptionToken();
+            var expiryTime = _passwordEncryptionService.GetTokenExpiryTime(token);
+            
+            return Ok(new { 
+                success = true, 
+                token = token,
+                expiresAt = expiryTime.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取密码加密令牌失败");
+            return StatusCode(500, new { success = false, message = "获取密码加密令牌失败" });
+        }
+    }
+
+    /// <summary>
     /// 检查用户权限
     /// </summary>
     [HttpGet("check-permissions")]
@@ -265,7 +312,8 @@ public class CreateUserRequest
 {
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    public string EncryptedPassword { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
+    public string EncryptionToken { get; set; } = string.Empty;
     public bool IsAdmin { get; set; } = false;
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using WebUI.Models;
+using WebUI.Services;
 
 namespace WebUI.Pages.Account;
 
@@ -13,15 +14,18 @@ public class ChangePasswordModel : PageModel
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly ILogger<ChangePasswordModel> _logger;
+    private readonly IPasswordEncryptionService _passwordEncryptionService;
 
     public ChangePasswordModel(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        ILogger<ChangePasswordModel> logger)
+        ILogger<ChangePasswordModel> logger,
+        IPasswordEncryptionService passwordEncryptionService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _logger = logger;
+        _passwordEncryptionService = passwordEncryptionService;
     }
 
     [BindProperty]
@@ -58,6 +62,10 @@ public class ChangePasswordModel : PageModel
         }
 
         Input.Email = user.Email ?? string.Empty;
+        
+        // 生成密码加密令牌
+        ViewData["PasswordEncryptionToken"] = _passwordEncryptionService.GenerateEncryptionToken();
+        
         return Page();
     }
 
@@ -123,7 +131,29 @@ public class ChangePasswordModel : PageModel
                 return Page();
             }
 
-            var passwordResult = await _userManager.ChangePasswordAsync(user, Input.CurrentPassword, Input.NewPassword);
+            // 解密密码
+            string decryptedNewPassword;
+            string decryptedCurrentPassword;
+            try
+            {
+                var encryptionToken = Request.Form["EncryptionToken"].FirstOrDefault();
+                if (string.IsNullOrEmpty(encryptionToken))
+                {
+                    ModelState.AddModelError(string.Empty, "密码加密令牌缺失，请刷新页面重试");
+                    return Page();
+                }
+
+                decryptedNewPassword = _passwordEncryptionService.DecryptPassword(Input.NewPassword, encryptionToken);
+                decryptedCurrentPassword = _passwordEncryptionService.DecryptPassword(Input.CurrentPassword, encryptionToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "密码解密失败");
+                ModelState.AddModelError(string.Empty, "密码解密失败，请刷新页面重试");
+                return Page();
+            }
+
+            var passwordResult = await _userManager.ChangePasswordAsync(user, decryptedCurrentPassword, decryptedNewPassword);
             if (!passwordResult.Succeeded)
             {
                 foreach (var error in passwordResult.Errors)

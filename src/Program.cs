@@ -152,6 +152,9 @@ builder.Services.AddScoped<ISecureEncryptionService, SecureEncryptionService>();
 // 添加CSRF令牌服务
 builder.Services.AddScoped<ICsrfTokenService, CsrfTokenService>();
 
+// 添加密码加密服务
+builder.Services.AddScoped<IPasswordEncryptionService, PasswordEncryptionService>();
+
 // 添加内存缓存（用于频率限制）
 builder.Services.AddMemoryCache();
 

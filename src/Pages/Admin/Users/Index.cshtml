@@ -166,6 +166,7 @@
     <script>
         // 全局变量
         let csrfToken = null;
+        let passwordEncryptionToken = null;
 
         // 初始化CSRF令牌
         async function initializeCsrfToken() {
@@ -203,9 +204,90 @@
             return csrfToken;
         }
 
+        // 初始化密码加密令牌
+        async function initializePasswordEncryptionToken() {
+            try {
+                console.log('正在获取密码加密令牌...');
+                const response = await fetch('/api/admin/password-encryption-token', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                console.log('密码加密令牌响应状态:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('密码加密令牌响应数据:', data);
+                    if (data.success) {
+                        passwordEncryptionToken = data.token;
+                        console.log('密码加密令牌已获取:', passwordEncryptionToken.substring(0, 8) + '...');
+                    } else {
+                        console.error('密码加密令牌获取失败:', data.message);
+                    }
+                } else {
+                    console.error('密码加密令牌请求失败:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('获取密码加密令牌失败:', error);
+            }
+        }
+
+        // 获取密码加密令牌（如果不存在则重新获取）
+        async function getPasswordEncryptionToken() {
+            if (!passwordEncryptionToken) {
+                await initializePasswordEncryptionToken();
+            }
+            return passwordEncryptionToken;
+        }
+
+        // 简单的密码加密函数（使用Web Crypto API）
+        async function encryptPassword(password, token) {
+            try {
+                // 将密码和令牌组合
+                const combinedData = password + ':' + token;
+                
+                // 使用Web Crypto API进行加密
+                const encoder = new TextEncoder();
+                const data = encoder.encode(combinedData);
+                
+                // 生成密钥（使用SHA-256哈希令牌作为密钥）
+                const keyData = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    keyData,
+                    { name: 'AES-GCM' },
+                    false,
+                    ['encrypt']
+                );
+                
+                // 生成随机IV
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                
+                // 加密数据
+                const encryptedData = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    data
+                );
+                
+                // 将IV和加密数据组合并转换为Base64
+                const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+                combined.set(iv);
+                combined.set(new Uint8Array(encryptedData), iv.length);
+                
+                return btoa(String.fromCharCode(...combined));
+            } catch (error) {
+                console.error('密码加密失败:', error);
+                throw new Error('密码加密失败');
+            }
+        }
+
         $(document).ready(function() {
             // 初始化CSRF令牌
             initializeCsrfToken();
+            
+            // 初始化密码加密令牌
+            initializePasswordEncryptionToken();
 
             $('#usersTable').DataTable({
                 language: {
@@ -298,13 +380,31 @@
                 }
 
                 try {
-                    const token = await getCsrfToken();
+                    const csrfToken = await getCsrfToken();
+                    const encryptionToken = await getPasswordEncryptionToken();
+                    
+                    if (!encryptionToken) {
+                        alert('获取密码加密令牌失败，请刷新页面重试');
+                        return;
+                    }
+
+                    // 加密密码
+                    const encryptedPassword = await encryptPassword(formData.password, encryptionToken);
+                    
+                    const requestData = {
+                        displayName: formData.displayName,
+                        email: formData.email,
+                        encryptedPassword: encryptedPassword,
+                        confirmPassword: formData.confirmPassword,
+                        encryptionToken: encryptionToken,
+                        isAdmin: formData.isAdmin
+                    };
                     
                     // 设置jQuery的全局AJAX设置
                     $.ajaxSetup({
                         beforeSend: function(xhr) {
-                            if (token) {
-                                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                            if (csrfToken) {
+                                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
                             }
                         }
                     });
@@ -313,7 +413,7 @@
                         url: '/api/admin/users',
                         type: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify(formData),
+                        data: JSON.stringify(requestData),
                         success: function(response) {
                             if (response.success) {
                                 location.reload();
