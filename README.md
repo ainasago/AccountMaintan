@@ -387,9 +387,8 @@ ENTRYPOINT ["dotnet", "WebUI.dll"]
 
 ## 📞 联系我们
 
-- **项目主页**：https://github.com/your-username/AccountMaintan
-- **问题反馈**：https://github.com/your-username/AccountMaintan/issues
-- **邮箱**：your-email@example.com
+- **项目主页**：https://github.com/ainasago/AccountMaintan
+- **问题反馈**：https://github.com/ainasago/AccountMaintan/issues 
 
 ---
 
