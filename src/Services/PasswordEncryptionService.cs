@@ -211,7 +211,12 @@ public class PasswordEncryptionService : IPasswordEncryptionService
     private string EncryptString(string plainText, string key)
     {
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32)); // 确保密钥长度为32字节
+        
+        // 使用SHA-256哈希生成密钥（与前端保持一致）
+        using var sha256 = SHA256.Create();
+        var keyBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(key));
+        aes.Key = keyBytes;
+        
         aes.GenerateIV();
 
         using var encryptor = aes.CreateEncryptor();
@@ -238,7 +243,11 @@ public class PasswordEncryptionService : IPasswordEncryptionService
         var fullCipher = Convert.FromBase64String(cipherText);
 
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32)); // 确保密钥长度为32字节
+        
+        // 使用SHA-256哈希生成密钥（与前端保持一致）
+        using var sha256 = SHA256.Create();
+        var keyBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(key));
+        aes.Key = keyBytes;
 
         var iv = new byte[aes.IV.Length];
         var cipher = new byte[fullCipher.Length - iv.Length];
@@ -272,9 +281,14 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             Buffer.BlockCopy(fullCipher, 0, iv, 0, 16);
             Buffer.BlockCopy(fullCipher, 16, cipher, 0, cipher.Length);
 
-            // 使用AES-CBC解密
+            // 使用AES-CBC解密（与前端保持一致的密钥生成方式）
             using var aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32));
+            
+            // 使用SHA-256哈希生成密钥（与前端保持一致）
+            using var sha256 = SHA256.Create();
+            var keyBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(key));
+            aes.Key = keyBytes;
+            
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
             aes.IV = iv;
