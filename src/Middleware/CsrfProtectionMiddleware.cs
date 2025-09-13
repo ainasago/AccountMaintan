@@ -67,19 +67,32 @@ public class CsrfProtectionMiddleware
         // 从Cookie获取CSRF令牌
         var cookieToken = request.Cookies[CsrfCookieName] ?? "";
 
+        _logger.LogDebug("CSRF验证 - 请求头令牌: {HeaderToken}, Cookie令牌: {CookieToken}", 
+            string.IsNullOrEmpty(headerToken) ? "空" : headerToken.Substring(0, Math.Min(8, headerToken.Length)) + "...",
+            string.IsNullOrEmpty(cookieToken) ? "空" : cookieToken.Substring(0, Math.Min(8, cookieToken.Length)) + "...");
+
         if (string.IsNullOrEmpty(headerToken) || string.IsNullOrEmpty(cookieToken))
         {
+            _logger.LogWarning("CSRF验证失败 - 令牌为空: Header={HasHeader}, Cookie={HasCookie}", 
+                !string.IsNullOrEmpty(headerToken), !string.IsNullOrEmpty(cookieToken));
             return false;
         }
 
         // 比较令牌
         if (!string.Equals(headerToken, cookieToken, StringComparison.Ordinal))
         {
+            _logger.LogWarning("CSRF验证失败 - 令牌不匹配");
             return false;
         }
 
         // 验证令牌格式和有效性
-        return IsValidCsrfToken(headerToken);
+        var isValid = IsValidCsrfToken(headerToken);
+        if (!isValid)
+        {
+            _logger.LogWarning("CSRF验证失败 - 令牌格式无效");
+        }
+        
+        return isValid;
     }
 
     private bool IsValidCsrfToken(string token)

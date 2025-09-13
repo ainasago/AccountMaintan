@@ -14,17 +14,25 @@ document.addEventListener('DOMContentLoaded', function() {
 // 初始化CSRF令牌
 async function initializeCsrfToken() {
     try {
+        console.log('正在获取CSRF令牌...');
         const response = await fetch('/api/admin/csrf-token', {
             method: 'GET',
             credentials: 'include'
         });
         
+        console.log('CSRF令牌响应状态:', response.status);
+        
         if (response.ok) {
             const data = await response.json();
+            console.log('CSRF令牌响应数据:', data);
             if (data.success) {
                 csrfToken = data.token;
-                console.log('CSRF令牌已获取');
+                console.log('CSRF令牌已获取:', csrfToken.substring(0, 8) + '...');
+            } else {
+                console.error('CSRF令牌获取失败:', data.message);
             }
+        } else {
+            console.error('CSRF令牌请求失败:', response.status, response.statusText);
         }
     } catch (error) {
         console.error('获取CSRF令牌失败:', error);
@@ -193,11 +201,17 @@ async function deleteAccount(accountId) {
         
         if (token) {
             headers['X-CSRF-TOKEN'] = token;
+            console.log('删除账号 - CSRF令牌已设置:', token.substring(0, 8) + '...');
+        } else {
+            console.warn('删除账号 - 未获取到CSRF令牌');
         }
+        
+        console.log('删除账号 - 请求头:', headers);
         
         const response = await fetch(`/api/accounts/${accountId}`, {
             method: 'DELETE',
-            headers: headers
+            headers: headers,
+            credentials: 'include'
         });
 
         if (response.ok) {

@@ -185,6 +185,7 @@ public class AdminController : ControllerBase
     /// 获取CSRF令牌
     /// </summary>
     [HttpGet("csrf-token")]
+    [AllowAnonymous]
     public IActionResult GetCsrfToken()
     {
         try
