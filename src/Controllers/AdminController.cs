@@ -191,7 +191,8 @@ public class AdminController : ControllerBase
             var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (currentUserId == null)
             {
-                return Ok(new { isAdmin = false });
+                // 用户未登录，返回未认证状态
+                return Unauthorized(new { isAdmin = false, message = "用户未登录" });
             }
 
             var isAdmin = await _adminService.IsAdminAsync(currentUserId);

@@ -5,9 +5,20 @@
 
 // 检查用户权限并显示管理菜单
 $(document).ready(function() {
-    // 检查用户是否为管理员
-    checkAdminPermissions();
+    // 检查用户是否已登录，只有登录后才检查管理员权限
+    if (isUserLoggedIn()) {
+        checkAdminPermissions();
+    } else {
+        // 用户未登录，隐藏所有管理菜单
+        hideAdminMenus();
+    }
 });
+
+// 检查用户是否已登录
+function isUserLoggedIn() {
+    // 检查是否存在用户下拉菜单（只有登录用户才有）
+    return $('#navbarDropdown').length > 0;
+}
 
 function checkAdminPermissions() {
     $.ajax({
@@ -16,27 +27,38 @@ function checkAdminPermissions() {
         success: function(response) {
             if (response.isAdmin) {
                 // 管理员可以看到所有菜单
-                $('#adminMenu').show();
-                $('#adminSettingsMenu').show();
-                $('#settingsMenu').show();
-                $('#securityMenu').show();
-                $('#hangfireMenu').show();
+                showAdminMenus();
             } else {
                 // 普通用户只能看到账号管理和提醒管理
-                $('#adminMenu').hide();
-                $('#adminSettingsMenu').hide();
-                $('#settingsMenu').hide();
-                $('#securityMenu').hide();
-                $('#hangfireMenu').hide();
+                hideAdminMenus();
             }
         },
-        error: function() {
-            // 如果API不存在或出错，隐藏管理菜单，显示普通用户菜单
-            $('#adminMenu').hide();
-            $('#adminSettingsMenu').hide();
-            $('#settingsMenu').hide();
-            $('#securityMenu').hide();
-            $('#hangfireMenu').hide();
+        error: function(xhr) {
+            // 如果是401错误，说明用户未登录，隐藏管理菜单
+            if (xhr.status === 401) {
+                hideAdminMenus();
+            } else {
+                // 其他错误，也隐藏管理菜单
+                hideAdminMenus();
+            }
         }
     });
+}
+
+// 显示管理员菜单
+function showAdminMenus() {
+    $('#adminMenu').show();
+    $('#adminSettingsMenu').show();
+    $('#settingsMenu').show();
+    $('#securityMenu').show();
+    $('#hangfireMenu').show();
+}
+
+// 隐藏管理员菜单
+function hideAdminMenus() {
+    $('#adminMenu').hide();
+    $('#adminSettingsMenu').hide();
+    $('#settingsMenu').hide();
+    $('#securityMenu').hide();
+    $('#hangfireMenu').hide();
 }
