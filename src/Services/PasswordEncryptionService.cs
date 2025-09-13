@@ -110,8 +110,8 @@ public class PasswordEncryptionService : IPasswordEncryptionService
                 throw new InvalidOperationException("令牌已过期或无效");
             }
 
-            // 解密密码
-            var decryptedData = DecryptString(encryptedPassword, _encryptionKey);
+            // 解密密码（使用AES-GCM方式，与前端保持一致）
+            var decryptedData = DecryptAesGcm(encryptedPassword, _encryptionKey);
             var parts = decryptedData.Split(':', 2);
             
             if (parts.Length != 2)
@@ -239,6 +239,43 @@ public class PasswordEncryptionService : IPasswordEncryptionService
         using var srDecrypt = new StreamReader(csDecrypt);
 
         return srDecrypt.ReadToEnd();
+    }
+
+    /// <summary>
+    /// AES-CBC解密（与前端Web Crypto API兼容）
+    /// </summary>
+    private string DecryptAesGcm(string cipherText, string key)
+    {
+        try
+        {
+            var fullCipher = Convert.FromBase64String(cipherText);
+            
+            // 提取IV（前16字节）和密文
+            var iv = new byte[16];
+            var cipher = new byte[fullCipher.Length - 16];
+            
+            Buffer.BlockCopy(fullCipher, 0, iv, 0, 16);
+            Buffer.BlockCopy(fullCipher, 16, cipher, 0, cipher.Length);
+
+            // 使用AES-CBC解密
+            using var aes = Aes.Create();
+            aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32));
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+            aes.IV = iv;
+
+            using var decryptor = aes.CreateDecryptor();
+            using var msDecrypt = new MemoryStream(cipher);
+            using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+            using var srDecrypt = new StreamReader(csDecrypt);
+
+            return srDecrypt.ReadToEnd();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AES-CBC解密失败");
+            throw;
+        }
     }
 
     /// <summary>

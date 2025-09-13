@@ -240,32 +240,33 @@
             return passwordEncryptionToken;
         }
 
-        // 简单的密码加密函数（使用Web Crypto API）
+        // 密码加密函数（与后端保持一致）
         async function encryptPassword(password, token) {
             try {
                 // 将密码和令牌组合
                 const combinedData = password + ':' + token;
                 
-                // 使用Web Crypto API进行加密
+                // 使用Web Crypto API进行AES-CBC加密
                 const encoder = new TextEncoder();
                 const data = encoder.encode(combinedData);
                 
-                // 生成密钥（使用SHA-256哈希令牌作为密钥）
-                const keyData = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+                // 使用固定的加密密钥（与后端保持一致）
+                const keyString = 'AccountManagerPasswordEncryptionKey2024!';
+                const keyData = await crypto.subtle.digest('SHA-256', encoder.encode(keyString));
                 const key = await crypto.subtle.importKey(
                     'raw',
                     keyData,
-                    { name: 'AES-GCM' },
+                    { name: 'AES-CBC' },
                     false,
                     ['encrypt']
                 );
                 
-                // 生成随机IV
-                const iv = crypto.getRandomValues(new Uint8Array(12));
+                // 生成随机IV（AES-CBC需要16字节IV）
+                const iv = crypto.getRandomValues(new Uint8Array(16));
                 
                 // 加密数据
                 const encryptedData = await crypto.subtle.encrypt(
-                    { name: 'AES-GCM', iv: iv },
+                    { name: 'AES-CBC', iv: iv },
                     key,
                     data
                 );
