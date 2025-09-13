@@ -134,6 +134,7 @@ public class ChangePasswordModel : PageModel
             // 解密密码
             string decryptedNewPassword;
             string decryptedCurrentPassword;
+            string decryptedConfirmPassword;
             try
             {
                 var encryptionToken = Request.Form["EncryptionToken"].FirstOrDefault();
@@ -145,6 +146,14 @@ public class ChangePasswordModel : PageModel
 
                 decryptedNewPassword = _passwordEncryptionService.DecryptPassword(Input.NewPassword, encryptionToken);
                 decryptedCurrentPassword = _passwordEncryptionService.DecryptPassword(Input.CurrentPassword, encryptionToken);
+                decryptedConfirmPassword = _passwordEncryptionService.DecryptPassword(Input.ConfirmPassword, encryptionToken);
+                
+                // 验证新密码和确认密码是否匹配
+                if (decryptedNewPassword != decryptedConfirmPassword)
+                {
+                    ModelState.AddModelError(string.Empty, "新密码和确认密码不匹配");
+                    return Page();
+                }
             }
             catch (Exception ex)
             {
