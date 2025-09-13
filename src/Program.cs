@@ -6,6 +6,8 @@ using WebUI.Extensions;
 using WebUI.Hubs;
 using WebUI.Models;
 using WebUI.Services;
+using WebUI.Validators;
+using WebUI.Middleware;
 using FreeSql;
 using Serilog;
 using Serilog.Events;
@@ -99,13 +101,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 添加Identity服务
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    // 密码配置
+    // 密码配置 - 强化安全策略
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequiredUniqueChars = 1;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 12;
+    options.Password.RequiredUniqueChars = 4;
 
     // 锁定配置
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -121,20 +123,37 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.SignIn.RequireConfirmedPhoneNumber = false;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddPasswordValidator<CustomPasswordValidator<ApplicationUser>>();
 
-// 配置Cookie
+// 配置Cookie - 强化安全设置
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.ExpireTimeSpan = TimeSpan.FromHours(2); // 缩短到2小时
     options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true; // 防止XSS攻击
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // 仅HTTPS
+    options.Cookie.SameSite = SameSiteMode.Strict; // 防止CSRF攻击
+    options.Cookie.Name = "AccountManager.Auth"; // 自定义Cookie名称
 });
 
 // 添加加密服务
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+
+// 添加密码验证服务
+builder.Services.AddScoped<IPasswordValidatorService, PasswordValidatorService>();
+
+// 添加安全加密服务
+builder.Services.AddScoped<ISecureEncryptionService, SecureEncryptionService>();
+
+// 添加CSRF令牌服务
+builder.Services.AddScoped<ICsrfTokenService, CsrfTokenService>();
+
+// 添加内存缓存（用于频率限制）
+builder.Services.AddMemoryCache();
 
 // 添加TOTP服务
 builder.Services.AddScoped<ITotpService, TotpService>();
@@ -190,6 +209,10 @@ if (!isDesktop)
 }
 
 app.UseStaticFiles();
+
+// 添加安全中间件
+app.UseMiddleware<ApiSecurityMiddleware>();
+app.UseMiddleware<CsrfProtectionMiddleware>();
 
 app.UseRouting();
 
