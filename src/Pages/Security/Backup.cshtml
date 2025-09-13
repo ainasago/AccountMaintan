@@ -1,0 +1,19 @@
+@page
+@model WebUI.Pages.Security.BackupModel
+@{
+    ViewData["Title"] = "数据备份";
+}
+
+<div class="alert alert-info">
+    正在准备数据备份...
+    <a class="btn btn-link" asp-page="/Index">返回首页</a>
+    <noscript>
+        如果浏览器未自动下载，请 <a asp-page="/Security/Backup">点击这里</a>
+    </noscript>
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        <div class="mt-2 text-danger">@Model.Message</div>
+    }
+</div>
+
+

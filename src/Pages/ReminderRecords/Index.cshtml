@@ -1,0 +1,492 @@
+@page
+@model WebUI.Pages.ReminderRecords.IndexModel
+@{
+    ViewData["Title"] = "提醒记录历史";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-history"></i>
+                        提醒记录历史
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- 统计信息 -->
+                    <div class="row mb-4" id="statsContainer">
+                        <div class="col-md-2">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h4 id="totalCount">0</h4>
+                                    <small>总记录数</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h4 id="testCount">0</h4>
+                                    <small>测试记录</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h4 id="reminderCount">0</h4>
+                                    <small>提醒记录</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h4 id="successCount">0</h4>
+                                    <small>成功记录</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h4 id="failedCount">0</h4>
+                                    <small>失败记录</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body text-center">
+                                    <button class="btn btn-sm btn-outline-light" onclick="clearAllRecords()">
+                                        <i class="fas fa-trash"></i> 清空记录
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 筛选器 -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="recordTypeFilter">
+                                <option value="">所有类型</option>
+                                <option value="Test">测试记录</option>
+                                <option value="Reminder">提醒记录</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">所有状态</option>
+                                <option value="Success">成功</option>
+                                <option value="Failed">失败</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="pageSizeFilter">
+                                <option value="10">10条/页</option>
+                                <option value="20" selected>20条/页</option>
+                                <option value="50">50条/页</option>
+                                <option value="100">100条/页</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="loadRecords()">
+                                <i class="fas fa-search"></i> 搜索
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetFilters()">
+                                <i class="fas fa-refresh"></i> 重置
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 记录表格 -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>账号名称</th>
+                                    <th>记录类型</th>
+                                    <th>通知渠道</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>发送时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recordsTableBody">
+                                <!-- 记录将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">显示第</span>
+                                <span id="currentRange" class="fw-bold me-2">1-20</span>
+                                <span class="me-2">条，共</span>
+                                <span id="totalRecords" class="fw-bold me-2">0</span>
+                                <span>条记录</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <nav aria-label="分页导航">
+                                <ul class="pagination justify-content-end" id="pagination">
+                                    <!-- 分页将通过JavaScript动态生成 -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 详情模态框 -->
+<div class="modal fade" id="recordDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">记录详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="recordDetailContent">
+                <!-- 详情内容将通过JavaScript动态加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        let currentPageSize = 20;
+        let currentRecordType = '';
+        let currentStatus = '';
+
+        // 页面加载时初始化
+        $(document).ready(function() {
+            loadStats();
+            loadRecords();
+            
+            // 绑定筛选器事件
+            $('#recordTypeFilter, #statusFilter, #pageSizeFilter').change(function() {
+                currentPage = 1;
+                loadRecords();
+            });
+        });
+
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/ReminderRecords/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    $('#totalCount').text(stats.total);
+                    $('#testCount').text(stats.test);
+                    $('#reminderCount').text(stats.reminder);
+                    $('#successCount').text(stats.success);
+                    $('#failedCount').text(stats.failed);
+                }
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+            }
+        }
+
+        // 加载记录列表
+        async function loadRecords() {
+            try {
+                currentRecordType = $('#recordTypeFilter').val();
+                currentStatus = $('#statusFilter').val();
+                currentPageSize = parseInt($('#pageSizeFilter').val());
+
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    pageSize: currentPageSize
+                });
+
+                if (currentRecordType) params.append('recordType', currentRecordType);
+                if (currentStatus) params.append('status', currentStatus);
+
+                const response = await fetch(`/api/ReminderRecords?${params}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    renderRecords(data.records);
+                    renderPagination(data.pagination);
+                    updateRecordCount(data.pagination);
+                } else {
+                    showToast('加载记录失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载记录失败:', error);
+                showToast('加载记录失败', 'error');
+            }
+        }
+
+        // 渲染记录列表
+        function renderRecords(records) {
+            const tbody = $('#recordsTableBody');
+            tbody.empty();
+
+            if (records.length === 0) {
+                tbody.append(`
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <br>暂无记录
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            records.forEach(record => {
+                const statusBadge = record.status === 'Success' 
+                    ? '<span class="badge bg-success">成功</span>'
+                    : '<span class="badge bg-danger">失败</span>';
+
+                const typeBadge = record.recordType === 'Test'
+                    ? '<span class="badge bg-info">测试</span>'
+                    : '<span class="badge bg-warning">提醒</span>';
+
+                const row = `
+                    <tr>
+                        <td>${escapeHtml(record.accountName)}</td>
+                        <td>${typeBadge}</td>
+                        <td>${escapeHtml(record.notificationChannel)}</td>
+                        <td>${statusBadge}</td>
+                        <td>${formatDateTime(record.createdAt)}</td>
+                        <td>${record.sentAt ? formatDateTime(record.sentAt) : '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="showRecordDetail('${record.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord('${record.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        // 渲染分页
+        function renderPagination(pagination) {
+            const paginationElement = $('#pagination');
+            paginationElement.empty();
+
+            if (pagination.totalPages <= 1) return;
+
+            // 上一页
+            const prevDisabled = pagination.page <= 1 ? 'disabled' : '';
+            paginationElement.append(`
+                <li class="page-item ${prevDisabled}">
+                    <a class="page-link" href="#" onclick="goToPage(${pagination.page - 1})">上一页</a>
+                </li>
+            `);
+
+            // 页码
+            const startPage = Math.max(1, pagination.page - 2);
+            const endPage = Math.min(pagination.totalPages, pagination.page + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === pagination.page ? 'active' : '';
+                paginationElement.append(`
+                    <li class="page-item ${active}">
+                        <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+                    </li>
+                `);
+            }
+
+            // 下一页
+            const nextDisabled = pagination.page >= pagination.totalPages ? 'disabled' : '';
+            paginationElement.append(`
+                <li class="page-item ${nextDisabled}">
+                    <a class="page-link" href="#" onclick="goToPage(${pagination.page + 1})">下一页</a>
+                </li>
+            `);
+        }
+
+        // 更新记录计数
+        function updateRecordCount(pagination) {
+            const start = (pagination.page - 1) * pagination.pageSize + 1;
+            const end = Math.min(pagination.page * pagination.pageSize, pagination.totalCount);
+            
+            $('#currentRange').text(`${start}-${end}`);
+            $('#totalRecords').text(pagination.totalCount);
+        }
+
+        // 跳转到指定页面
+        function goToPage(page) {
+            currentPage = page;
+            loadRecords();
+        }
+
+        // 重置筛选器
+        function resetFilters() {
+            $('#recordTypeFilter').val('');
+            $('#statusFilter').val('');
+            $('#pageSizeFilter').val('20');
+            currentPage = 1;
+            loadRecords();
+        }
+
+        // 显示记录详情
+        async function showRecordDetail(recordId) {
+            try {
+                const response = await fetch(`/api/ReminderRecords?page=1&pageSize=1&recordType=&status=`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const record = data.records.find(r => r.id === recordId);
+                    
+                    if (record) {
+                        const detailContent = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>记录ID:</strong> ${record.id}<br>
+                                    <strong>账号名称:</strong> ${escapeHtml(record.accountName)}<br>
+                                    <strong>账号ID:</strong> ${record.accountId || '-'}<br>
+                                    <strong>记录类型:</strong> ${record.recordType}<br>
+                                    <strong>通知渠道:</strong> ${escapeHtml(record.notificationChannel)}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>状态:</strong> ${record.status}<br>
+                                    <strong>创建时间:</strong> ${formatDateTime(record.createdAt)}<br>
+                                    <strong>发送时间:</strong> ${record.sentAt ? formatDateTime(record.sentAt) : '-'}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-12">
+                                    <strong>消息内容:</strong><br>
+                                    <pre class="bg-light p-2 rounded">${escapeHtml(record.message || '无')}</pre>
+                                </div>
+                            </div>
+                            ${record.errorMessage ? `
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <strong>错误信息:</strong><br>
+                                    <pre class="bg-danger text-white p-2 rounded">${escapeHtml(record.errorMessage)}</pre>
+                                </div>
+                            </div>
+                            ` : ''}
+                        `;
+                        
+                        $('#recordDetailContent').html(detailContent);
+                        new bootstrap.Modal(document.getElementById('recordDetailModal')).show();
+                    }
+                }
+            } catch (error) {
+                console.error('加载记录详情失败:', error);
+                showToast('加载记录详情失败', 'error');
+            }
+        }
+
+        // 删除记录
+        async function deleteRecord(recordId) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+
+            try {
+                const response = await fetch(`/api/ReminderRecords/${recordId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('记录删除成功', 'success');
+                    loadStats();
+                    loadRecords();
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || '删除记录失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除记录失败:', error);
+                showToast('删除记录失败', 'error');
+            }
+        }
+
+        // 清空所有记录
+        async function clearAllRecords() {
+            if (!confirm('确定要清空所有记录吗？此操作不可恢复！')) return;
+
+            try {
+                const response = await fetch('/api/ReminderRecords/clear', {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showToast('所有记录已清空', 'success');
+                    loadStats();
+                    loadRecords();
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || '清空记录失败', 'error');
+                }
+            } catch (error) {
+                console.error('清空记录失败:', error);
+                showToast('清空记录失败', 'error');
+            }
+        }
+
+        // 工具函数
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN');
+        }
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            const toastClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+            const toast = `
+                <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+            toastContainer.insertAdjacentHTML('beforeend', toast);
+            
+            const toastElement = toastContainer.lastElementChild;
+            const bsToast = new bootstrap.Toast(toastElement);
+            bsToast.show();
+            
+            // 自动移除 toast 元素
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+
+        // 创建 toast 容器
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+    </script>
+}

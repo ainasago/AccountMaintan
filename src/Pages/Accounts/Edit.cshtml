@@ -1,0 +1,476 @@
+@page "{id:guid}"
+@model WebUI.Pages.Accounts.EditModel
+@{
+    ViewData["Title"] = "编辑账号";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 页面标题 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2"></i>编辑账号
+                </h1>
+                <a asp-page="./Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>返回列表
+                </a>
+            </div>
+
+            <!-- 账号编辑表单 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">账号信息</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="editAccountForm">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="Account.Id" />
+
+                        <!-- 基本信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>基本信息
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Name" class="form-label">账号名称 <span class="text-danger">*</span></label>
+                                    <input asp-for="Account.Name" class="form-control" placeholder="请输入账号名称" autocomplete="off">
+                                    <span asp-validation-for="Account.Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Url" class="form-label">登录网址</label>
+                                    <input asp-for="Account.Url" type="url" class="form-control" placeholder="https://example.com" autocomplete="off">
+                                    <span asp-validation-for="Account.Url" class="text-danger"></span>
+                                    <div class="form-text">可选，用于快速访问网站</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 登录信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-key me-2"></i>登录信息
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Username" class="form-label">用户名</label>
+                                    <input asp-for="Account.Username" class="form-control" placeholder="请输入用户名" autocomplete="off">
+                                    <span asp-validation-for="Account.Username" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Password" class="form-label">密码</label>
+                                    <div class="input-group">
+                                        <input asp-for="Account.Password" type="text" class="form-control" placeholder="留空表示不修改密码" autocomplete="off">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('Account_Password')">
+                                            <i class="fas fa-eye" id="Account_Password_icon"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="generatePassword()">
+                                            <i class="fas fa-dice"></i>
+                                        </button>
+                                    </div>
+                                    <span asp-validation-for="Account.Password" class="text-danger"></span>
+                                    <div class="form-text">留空表示不修改密码，输入新密码将覆盖原密码</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分类和标签 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-tags me-2"></i>分类和标签
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Category" class="form-label">分类</label>
+                                    <select asp-for="Account.Category" class="form-select">
+                                        <option value="">选择分类</option>
+                                        <option value="邮箱">邮箱</option>
+                                        <option value="社交">社交</option>
+                                        <option value="金融">金融</option>
+                                        <option value="游戏">游戏</option>
+                                        <option value="工作">工作</option>
+                                        <option value="购物">购物</option>
+                                        <option value="其他">其他</option>
+                                    </select>
+                                    <span asp-validation-for="Account.Category" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Tags" class="form-label">标签</label>
+                                    <input asp-for="Account.Tags" class="form-control" placeholder="用逗号分隔多个标签，如：重要,工作,常用">
+                                    <span asp-validation-for="Account.Tags" class="text-danger"></span>
+                                    <div class="form-text">多个标签用逗号分隔，便于分类和搜索</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 双因素认证 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-shield-alt me-2"></i>双因素认证 (可选)
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.AuthenticatorKey" class="form-label">Authenticator Key</label>
+                                    <div class="input-group">
+                                        <input asp-for="Account.AuthenticatorKey" class="form-control" placeholder="输入TOTP密钥或留空">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="generateTOTPKey()">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </div>
+                                    <span asp-validation-for="Account.AuthenticatorKey" class="text-danger"></span>
+                                    <div class="form-text">用于生成动态验证码，支持Google Authenticator等应用</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">TOTP密钥</label>
+                                    <div id="secretContainer" class="text-center" style="display: none;">
+                                        <div class="input-group mb-2">
+                                            <input type="text" class="form-control text-center" id="displaySecret" readonly>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="copySecret()">
+                                                <i class="fas fa-copy me-1"></i>复制
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">复制密钥到认证器应用</small>
+                                    </div>
+                                    <div id="secretPlaceholder" class="text-center text-muted py-3">
+                                        <i class="fas fa-key fa-2x mb-2"></i>
+                                        <br>输入TOTP密钥后显示复制按钮
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">二维码</label>
+                                    <div id="qrCodeContainer" class="text-center" style="display: none;">
+                                        <div id="qrCodeImage" class="mb-2"></div>
+                                        <small class="text-muted">扫描二维码添加到认证器应用</small>
+                                    </div>
+                                    <div id="qrCodePlaceholder" class="text-center text-muted py-3">
+                                        <i class="fas fa-qrcode fa-2x mb-2"></i>
+                                        <br>输入TOTP密钥后显示二维码
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 养号提醒设置 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-bell me-2"></i>养号提醒设置
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.ReminderCycle" class="form-label">提醒周期 (天)</label>
+                                    <input asp-for="Account.ReminderCycle" type="number" class="form-control" min="1" max="365">
+                                    <span asp-validation-for="Account.ReminderCycle" class="text-danger"></span>
+                                    <div class="form-text">设置多少天提醒一次，建议30天</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Account.ReminderType" class="form-label">提醒类型</label>
+                                    <select asp-for="Account.ReminderType" class="form-select">
+                                        <option value="Custom">自定义天数</option>
+                                        <option value="Daily">每天</option>
+                                        <option value="Weekly">每周</option>
+                                        <option value="Monthly">每月</option>
+                                    </select>
+                                    <span asp-validation-for="Account.ReminderType" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 账号状态 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-toggle-on me-2"></i>账号状态
+                                </h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="Account.IsActive" class="form-check-input" type="checkbox">
+                                        <label asp-for="Account.IsActive" class="form-check-label">
+                                            启用账号
+                                        </label>
+                                    </div>
+                                    <div class="form-text">禁用后账号将不会出现在提醒列表中</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 备注信息 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sticky-note me-2"></i>备注信息
+                                </h6>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label asp-for="Account.Notes" class="form-label">备注</label>
+                                    <textarea asp-for="Account.Notes" class="form-control" rows="4" 
+                                              placeholder="可以记录账号的特殊信息、使用说明等"></textarea>
+                                    <span asp-validation-for="Account.Notes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 安全问题 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-question-circle me-2"></i>安全问题 (可选)
+                                </h6>
+                                <div id="securityQuestionsContainer">
+                                    @if (Model.SecurityQuestions.Any())
+                                    {
+                                        for (int i = 0; i < Model.SecurityQuestions.Count; i++)
+                                        {
+                                            <div class="security-question-item mb-3 p-3 border rounded">
+                                                <input type="hidden" name="SecurityQuestions[@i].Id" value="@Model.SecurityQuestions[i].Id" />
+                                                <div class="row">
+                                                    <div class="col-md-5">
+                                                        <input type="text" class="form-control" name="SecurityQuestions[@i].Question" 
+                                                               value="@Model.SecurityQuestions[i].Question"
+                                                               placeholder="安全问题，如：您的第一个宠物的名字是什么？">
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <input type="text" class="form-control" name="SecurityQuestions[@i].Answer" 
+                                                               value="@Model.SecurityQuestions[i].Answer"
+                                                               placeholder="安全问题答案">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSecurityQuestion(this)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="security-question-item mb-3 p-3 border rounded">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <input type="text" class="form-control" name="SecurityQuestions[0].Question" 
+                                                           placeholder="安全问题，如：您的第一个宠物的名字是什么？">
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <input type="text" class="form-control" name="SecurityQuestions[0].Answer" 
+                                                           placeholder="安全问题答案">
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSecurityQuestion(this)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSecurityQuestion()">
+                                    <i class="fas fa-plus me-1"></i>添加安全问题
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 提交按钮 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a asp-page="./Index" class="btn btn-secondary">
+                                        <i class="fas fa-times me-1"></i>取消
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>保存修改
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        let securityQuestionIndex = @(Model.SecurityQuestions.Count > 0 ? Model.SecurityQuestions.Count : 1);
+
+        // 切换密码可见性
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '_icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // 生成随机密码
+        function generatePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let password = '';
+            for (let i = 0; i < 16; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('Account_Password').value = password;
+        }
+
+        // 生成TOTP密钥
+        function generateTOTPKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let key = '';
+            for (let i = 0; i < 32; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('Account_AuthenticatorKey').value = key;
+            updateQRCode();
+        }
+
+        // 更新TOTP密钥显示和二维码
+        function updateQRCode() {
+            const key = document.getElementById('Account_AuthenticatorKey').value;
+            const name = document.getElementById('Account_Name').value || 'Account';
+            
+            if (key.trim()) {
+                // 显示密钥
+                document.getElementById('secretPlaceholder').style.display = 'none';
+                document.getElementById('secretContainer').style.display = 'block';
+                document.getElementById('displaySecret').value = key;
+                
+                // 显示二维码
+                document.getElementById('qrCodePlaceholder').style.display = 'none';
+                document.getElementById('qrCodeContainer').style.display = 'block';
+                
+                // 生成otpauth URL
+                const otpauthUrl = 'otpauth://totp/' + encodeURIComponent(name) + '?secret=' + key + '&issuer=AccountManager';
+                
+                // 使用 qrcodejs 生成二维码
+                const qrCodeImage = document.getElementById('qrCodeImage');
+                qrCodeImage.innerHTML = ''; // 清空之前的内容
+                
+                // 检查 QRCode 库是否已加载
+                if (typeof QRCode !== 'undefined') {
+                    try {
+                        // 创建新的二维码实例
+                        new QRCode(qrCodeImage, {
+                            text: otpauthUrl,
+                            width: 200,
+                            height: 200,
+                            colorDark: "#000000",
+                            colorLight: "#FFFFFF",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    } catch (error) {
+                        console.error('二维码生成失败:', error);
+                        // 如果生成失败，显示URL文本作为备选
+                        qrCodeImage.innerHTML = 
+                            '<div class="bg-light p-2 rounded"><small class="text-break">' + otpauthUrl + '</small></div>';
+                    }
+                } else {
+                    // 如果QRCode库未加载，显示URL文本
+                    qrCodeImage.innerHTML = 
+                        '<div class="bg-light p-2 rounded"><small class="text-break">' + otpauthUrl + '</small></div>';
+                    console.warn('QRCode库未加载，显示URL文本作为备选');
+                }
+            } else {
+                // 隐藏密钥和二维码
+                document.getElementById('secretPlaceholder').style.display = 'block';
+                document.getElementById('secretContainer').style.display = 'none';
+                document.getElementById('qrCodePlaceholder').style.display = 'block';
+                document.getElementById('qrCodeContainer').style.display = 'none';
+            }
+        }
+
+        // 复制TOTP密钥到剪贴板
+        function copySecret() {
+            const secretInput = document.getElementById('displaySecret');
+            secretInput.select();
+            document.execCommand('copy');
+            
+            // 显示复制成功提示
+            const copyBtn = event.target.closest('button');
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+            copyBtn.classList.remove('btn-outline-secondary');
+            copyBtn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+
+        // 添加安全问题
+        function addSecurityQuestion() {
+            const container = document.getElementById('securityQuestionsContainer');
+            const newQuestion = document.createElement('div');
+            newQuestion.className = 'security-question-item mb-3 p-3 border rounded';
+            newQuestion.innerHTML = 
+                '<div class="row">' +
+                    '<div class="col-md-5">' +
+                        '<input type="text" class="form-control" name="SecurityQuestions[' + securityQuestionIndex + '].Question" ' +
+                        'placeholder="安全问题，如：您的第一个宠物的名字是什么？">' +
+                    '</div>' +
+                    '<div class="col-md-5">' +
+                        '<input type="text" class="form-control" name="SecurityQuestions[' + securityQuestionIndex + '].Answer" ' +
+                        'placeholder="安全问题答案">' +
+                    '</div>' +
+                    '<div class="col-md-2">' +
+                        '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSecurityQuestion(this)">' +
+                            '<i class="fas fa-trash"></i>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+            container.appendChild(newQuestion);
+            securityQuestionIndex++;
+        }
+
+        // 删除安全问题
+        function removeSecurityQuestion(button) {
+            button.closest('.security-question-item').remove();
+        }
+
+        // 监听TOTP密钥输入
+        document.getElementById('Account_AuthenticatorKey').addEventListener('input', updateQRCode);
+        document.getElementById('Account_Name').addEventListener('input', updateQRCode);
+
+        // 页面加载时初始化二维码
+        document.addEventListener('DOMContentLoaded', function() {
+            // 确保页面加载后立即显示现有的TOTP密钥和二维码
+            updateQRCode();
+        });
+    </script>
+}

@@ -1,0 +1,158 @@
+@page
+@model WebUI.Pages.Admin.SettingsModel
+@{
+    ViewData["Title"] = "系统设置";
+}
+
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-cog me-2"></i>系统设置
+            </h1>
+        </div>
+    </div>
+
+    <form id="adminSettingsForm">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">用户注册设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="allowRegistration" 
+                                       name="allowRegistration" @(Model.Settings.AllowRegistration ? "checked" : "")>
+                                <label class="form-check-label" for="allowRegistration">
+                                    允许用户注册
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">关闭后新用户将无法注册账户</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="requireAdminApproval" 
+                                       name="requireAdminApproval" @(Model.Settings.RequireAdminApproval ? "checked" : "")>
+                                <label class="form-check-label" for="requireAdminApproval">
+                                    需要管理员批准新用户
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">启用后新注册用户需要管理员批准才能使用系统</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="maxUsers" class="form-label">最大用户数量</label>
+                            <input type="number" class="form-control" id="maxUsers" name="maxUsers" 
+                                   value="@Model.Settings.MaxUsers" min="0">
+                            <small class="form-text text-muted">0表示无限制</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="defaultUserRole" class="form-label">默认用户角色</label>
+                            <select class="form-select" id="defaultUserRole" name="defaultUserRole">
+                                <option value="User" @(Model.Settings.DefaultUserRole == "User" ? "selected" : "")>普通用户</option>
+                                <option value="Admin" @(Model.Settings.DefaultUserRole == "Admin" ? "selected" : "")>管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">系统维护设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode" 
+                                       name="maintenanceMode" @(Model.Settings.MaintenanceMode ? "checked" : "")>
+                                <label class="form-check-label" for="maintenanceMode">
+                                    启用维护模式
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">启用后系统将进入维护模式，普通用户无法访问</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="maintenanceMessage" class="form-label">维护模式消息</label>
+                            <textarea class="form-control" id="maintenanceMessage" name="maintenanceMessage" 
+                                      rows="3">@Model.Settings.MaintenanceMessage</textarea>
+                            <small class="form-text text-muted">在维护模式下显示给用户的消息</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">系统信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">当前用户数</label>
+                            <div class="form-control-plaintext">@Model.UserCount</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">最后更新</label>
+                            <div class="form-control-plaintext">@Model.Settings.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">更新者</label>
+                            <div class="form-control-plaintext">@(Model.Settings.UpdatedBy ?? "系统")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save me-1"></i>保存设置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#adminSettingsForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    allowRegistration: $('#allowRegistration').is(':checked'),
+                    requireAdminApproval: $('#requireAdminApproval').is(':checked'),
+                    maxUsers: parseInt($('#maxUsers').val()) || 0,
+                    defaultUserRole: $('#defaultUserRole').val(),
+                    maintenanceMode: $('#maintenanceMode').is(':checked'),
+                    maintenanceMessage: $('#maintenanceMessage').val()
+                };
+
+                $.ajax({
+                    url: '/api/admin/settings',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        if (response.success) {
+                            alert('设置保存成功');
+                            location.reload();
+                        } else {
+                            alert('保存失败: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('保存设置时发生错误');
+                    }
+                });
+            });
+        });
+    </script>
+}

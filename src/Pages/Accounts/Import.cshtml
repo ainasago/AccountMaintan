@@ -1,0 +1,33 @@
+@page
+@model WebUI.Pages.Accounts.ImportModel
+@{
+    ViewData["Title"] = "批量导入";
+}
+
+<h2 class="mb-4">批量导入账号</h2>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="file" class="form-label">选择CSV或XLSX文件</label>
+                <input class="form-control" type="file" id="file" name="file" accept=".csv,.xlsx" required>
+                <div class="form-text">
+                    支持 CSV 或 Excel(xlsx)。列名（不区分大小写）：Name, Username(必填), Password, Url, Notes, Tags, Category, ExpireAt(yyyy-MM-dd), IsActive(true/false), ReminderCycle, ReminderType(数字), AuthenticatorKey。
+                    如果缺少 Name，则使用 Username 作为名称。
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload me-1"></i>开始导入
+            </button>
+            <a asp-page="/Accounts/Index" class="btn btn-secondary ms-2">返回</a>
+        </form>
+
+        @if (Model.ResultMessage != null)
+        {
+            <div class="alert alert-info mt-3">@Model.ResultMessage</div>
+        }
+    </div>
+</div>
+
+

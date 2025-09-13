@@ -1,0 +1,38 @@
+{
+  "Email": {
+    "IsEnabled": false,
+    "SmtpServer": "smtp.yandex.com",
+    "SmtpPort": 587,
+    "FromEmail": "tradingviewAlert@yandex.com",
+    "FromName": "\u8D26\u53F7\u7BA1\u7406",
+    "Username": "tradingviewAlert@yandex.com",
+    "Password": "cyoljryqovwwnpuw",
+    "UseSsl": true,
+    "ToEmails": "wtgo117@gmail.com",
+    "SubjectTemplate": "\u8D26\u53F7\u63D0\u9192 - {AccountName}",
+    "BodyTemplate": "\u8D26\u53F7 \u0027{AccountName}\u0027 \u9700\u8981\u8BBF\u95EE\uFF0C\u8BF7\u53CA\u65F6\u767B\u5F55\u3002\u65F6\u95F4: {Now}",
+    "UseGmailApi": false,
+    "GmailClientId": "1084947493760-pgvo9dgdn2t7ttumlrnf9ddgfs3l2mnl.apps.googleusercontent.com",
+    "GmailClientSecret": "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",
+    "GmailRefreshToken": ""
+  },
+  "Telegram": {
+    "IsEnabled": true,
+    "BotToken": "8485652730:AAF8xET9YkPV4jBtMsew_MyRUWI5QUmHAyk",
+    "ChatId": "619188184",
+    "EnableMarkdown": true,
+    "TextTemplate": "\u53CB\u60C5\u63D0\u9192:*\u8D26\u53F7\u63D0\u9192*\n\u8D26\u53F7: \u0060{AccountName}\u0060\n\u65F6\u95F4: {Now},\u8BB0\u5F97\u767B\u5F55"
+  },
+  "SignalR": {
+    "IsEnabled": true,
+    "NotificationTitle": "\u8D26\u53F7\u63D0\u9192",
+    "NotificationIcon": "/favicon.ico"
+  },
+  "Reminder": {
+    "CheckInterval": "0 0/1 * * * ?",
+    "DefaultReminderCycle": 1,
+    "EnableAutoReminder": true,
+    "ReminderHour": 0,
+    "ReminderMinute": 0
+  }
+}

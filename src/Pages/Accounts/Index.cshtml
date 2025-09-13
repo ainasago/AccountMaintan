@@ -1,0 +1,483 @@
+@page
+@model WebUI.Pages.Accounts.IndexModel
+@{
+    ViewData["Title"] = "账号管理";
+}
+
+<div class="container-fluid">
+    <!-- 页面标题和操作按钮 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-key me-2"></i>账号管理
+                </h1>
+                <div>
+                    <button class="btn btn-success me-2" onclick="testGlobalReminder()">
+                        <i class="fas fa-bell me-1"></i>测试全局提醒
+                    </button>
+                    <a asp-page="./Create" class="btn btn-primary me-2">
+                        <i class="fas fa-plus me-1"></i>新增账号
+                    </a>
+                    <a asp-page="./Import" class="btn btn-outline-success me-2">
+                        <i class="fas fa-upload me-1"></i>导入CSV/XLSX
+                    </a>
+                    <div class="btn-group me-2">
+                        <a asp-page="./Export" class="btn btn-outline-info">
+                            <i class="fas fa-file-csv me-1"></i>导出CSV
+                        </a>
+                        <a asp-page="./ExportExcel" class="btn btn-outline-info">
+                            <i class="fas fa-file-excel me-1"></i>导出XLSX
+                        </a>
+                        <a asp-page="./TemplateExcel" class="btn btn-outline-secondary">
+                            <i class="fas fa-template me-1"></i>模板
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索和筛选 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="keyword" class="form-label">关键词搜索</label>
+                            <input type="text" class="form-control" id="keyword" name="keyword" 
+                                   value="@Model.SearchModel.Keyword" placeholder="账号名称、用户名、备注等">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="category" class="form-label">分类</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">全部分类</option>
+                                <option value="邮箱" selected="@(Model.SearchModel.Category == "邮箱")">邮箱</option>
+                                <option value="社交" selected="@(Model.SearchModel.Category == "社交")">社交</option>
+                                <option value="金融" selected="@(Model.SearchModel.Category == "金融")">金融</option>
+                                <option value="游戏" selected="@(Model.SearchModel.Category == "游戏")">游戏</option>
+                                <option value="工作" selected="@(Model.SearchModel.Category == "工作")">工作</option>
+                                <option value="其他" selected="@(Model.SearchModel.Category == "其他")">其他</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="tags" class="form-label">标签</label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                   value="@Model.SearchModel.Tags" placeholder="输入标签关键词">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i>搜索
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 账号列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">账号列表</h5>
+                        <span class="badge bg-primary">共 @Model.TotalCount 个账号</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model.Accounts.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>账号名称</th>
+                                        <th>用户名</th>
+                                        <th>分类</th>
+                                        <th>标签</th>
+                                        <th>最后访问</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var account in Model.Accounts)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        @if (!string.IsNullOrEmpty(account.Url))
+                                                        {
+                                                            <img src="https://www.google.com/s2/favicons?domain=@account.Url" 
+                                                                 alt="favicon" class="rounded" width="24" height="24">
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="bg-secondary rounded d-flex align-items-center justify-content-center" 
+                                                                 style="width: 24px; height: 24px;">
+                                                                <i class="fas fa-key text-white" style="font-size: 12px;"></i>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <strong>@account.Name</strong>
+                                                        @if (!string.IsNullOrEmpty(account.Url))
+                                                        {
+                                                            <br><small class="text-muted">@account.Url</small>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="text-monospace">@account.Username</span>
+                                                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                                            onclick="copyToClipboard('@account.Username')" 
+                                                            title="复制用户名">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(account.Category))
+                                                {
+                                                    <span class="badge bg-info">@account.Category</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(account.Tags))
+                                                {
+                                                    @foreach (var tag in account.Tags.Split(',').Take(3))
+                                                    {
+                                                        <span class="badge bg-secondary me-1">@tag.Trim()</span>
+                                                    }
+                                                    @if (account.Tags.Split(',').Length > 3)
+                                                    {
+                                                        <span class="badge bg-light text-dark">+@(account.Tags.Split(',').Length - 3)</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (account.LastVisited.HasValue)
+                                                {
+                                                    <span class="text-muted">@account.LastVisited.Value.ToString("MM-dd HH:mm")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-warning">从未访问</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (account.IsActive)
+                                                {
+                                                    <span class="badge bg-success">正常</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">禁用</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@account.Url" target="_blank" class="btn btn-outline-primary" 
+                                                       title="访问网站">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-info" onclick="showPassword('@account.Id')" 
+                                                            title="查看密码">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-success" onclick="testReminder('@account.Id', '@account.Name')" 
+                                                            title="测试提醒">
+                                                        <i class="fas fa-bell"></i>
+                                                    </button>
+                                                    <a asp-page="./Edit" asp-route-id="@account.Id" class="btn btn-outline-warning" 
+                                                       title="编辑">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-danger" onclick="deleteAccount('@account.Id')" 
+                                                            title="删除">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        @if (Model.TotalPages > 1)
+                        {
+                            <div class="card-footer">
+                                <nav aria-label="账号列表分页">
+                                    <ul class="pagination justify-content-center mb-0">
+                                        @if (Model.CurrentPage > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" asp-page="./Index" asp-route-page="@(Model.CurrentPage - 1)" 
+                                                   asp-route-keyword="@Model.SearchModel.Keyword" 
+                                                   asp-route-category="@Model.SearchModel.Category" 
+                                                   asp-route-tags="@Model.SearchModel.Tags">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                                        {
+                                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                                <a class="page-link" asp-page="./Index" asp-route-page="@i" 
+                                                   asp-route-keyword="@Model.SearchModel.Keyword" 
+                                                   asp-route-category="@Model.SearchModel.Category" 
+                                                   asp-route-tags="@Model.SearchModel.Tags">
+                                                    @i
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Model.CurrentPage < Model.TotalPages)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" asp-page="./Index" asp-route-page="@(Model.CurrentPage + 1)" 
+                                                   asp-route-keyword="@Model.SearchModel.Keyword" 
+                                                   asp-route-category="@Model.SearchModel.Category" 
+                                                   asp-route-tags="@Model.SearchModel.Tags">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">暂无账号数据</h5>
+                            <p class="text-muted">点击"新增账号"按钮开始添加您的第一个账号</p>
+                            <a asp-page="./Create" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>新增账号
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 密码查看模态框 -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">账号密码</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-control" id="modalUsername" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">密码</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="modalPassword" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility()">
+                            <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyPassword()">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/accounts.js"></script>
+    <script src="~/js/signalr.min.js"></script>
+    <script>
+        // SignalR 连接
+        let connection;
+        
+        // 页面加载完成后初始化 SignalR
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSignalR();
+        });
+
+        // 初始化 SignalR 连接
+        function initializeSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/reminderHub")
+                .withAutomaticReconnect()
+                .build();
+
+            // 监听提醒消息
+            connection.on("ReceiveReminder", function(message) {
+                showReminderNotification(message);
+            });
+
+            // 启动连接
+            connection.start()
+                .then(function () {
+                    console.log("SignalR 连接已建立");
+                })
+                .catch(function (err) {
+                    console.error("SignalR 连接失败:", err);
+                });
+        }
+
+        // 显示提醒通知
+        function showReminderNotification(message) {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px;';
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-bell text-warning me-2"></i>
+                    <div class="flex-grow-1">
+                        <strong>养号提醒</strong><br>
+                        <small>${message}</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 自动移除通知
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 8000);
+        }
+
+        // 测试单个账号提醒
+        function testReminder(accountId, accountName) {
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+                showToast('SignalR 连接未建立，请稍后重试', 'warning');
+                return;
+            }
+
+            const message = `测试提醒：账号 "${accountName}" 需要养号了！`;
+            
+            // 发送测试提醒
+            connection.invoke("SendTestReminder", message)
+                .then(function () {
+                    showToast('测试提醒已发送', 'success');
+                })
+                .catch(function (err) {
+                    console.error("发送测试提醒失败:", err);
+                    showToast('发送测试提醒失败', 'error');
+                });
+        }
+
+        // 测试全局提醒
+        function testGlobalReminder() {
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+                showToast('SignalR 连接未建立，请稍后重试', 'warning');
+                return;
+            }
+
+            const message = '全局测试提醒：系统提醒您检查所有账号的养号状态！';
+            
+            // 发送全局测试提醒
+            connection.invoke("SendTestReminder", message)
+                .then(function () {
+                    showToast('全局测试提醒已发送', 'success');
+                })
+                .catch(function (err) {
+                    console.error("发送全局测试提醒失败:", err);
+                    showToast('发送全局测试提醒失败', 'error');
+                });
+        }
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showToast('复制成功', 'success');
+            }).catch(function() {
+                showToast('复制失败', 'error');
+            });
+        }
+
+        // 显示密码
+        function showPassword(accountId) {
+            // 这里应该通过API获取密码
+            fetch('/api/accounts/' + accountId + '/password', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('modalUsername').value = data.username;
+                    document.getElementById('modalPassword').value = data.password;
+                    new bootstrap.Modal(document.getElementById('passwordModal')).show();
+                } else {
+                    showToast('获取密码失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('获取密码失败', 'error');
+            });
+        }
+
+        // 切换密码可见性
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('modalPassword');
+            const icon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // 复制密码
+        function copyPassword() {
+            const passwordInput = document.getElementById('modalPassword');
+            copyToClipboard(passwordInput.value);
+        }
+
+        // 显示提示消息
+        function showToast(message, type) {
+            // 这里可以使用任何toast库，或者简单的alert
+            alert(message);
+        }
+    </script>
+}

@@ -1,0 +1,868 @@
+@page
+@model WebUI.Pages.Reminders.IndexModel
+@{
+    ViewData["Title"] = "提醒管理";
+}
+
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-bell me-2"></i>提醒管理
+                </h1>
+                <div>
+                    <button class="btn btn-success me-2" onclick="startScheduler()">
+                        <i class="fas fa-play me-1"></i>启动调度
+                    </button>
+                    <button class="btn btn-warning me-2" onclick="stopScheduler()">
+                        <i class="fas fa-stop me-1"></i>停止调度
+                    </button>
+                    <button class="btn btn-primary me-2" onclick="triggerReminderCheck()">
+                        <i class="fas fa-sync me-1"></i>手动检查
+                    </button>
+                    <a href="/hangfire" target="_blank" class="btn btn-outline-info">
+                        <i class="fas fa-tasks me-1"></i>任务面板
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提醒周期设置卡片 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>提醒周期设置
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">快捷周期选择</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('daily')">
+                                        <i class="fas fa-calendar-day me-1"></i>每天
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('weekly')">
+                                        <i class="fas fa-calendar-week me-1"></i>每周
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('monthly')">
+                                        <i class="fas fa-calendar-alt me-1"></i>每月
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('custom')">
+                                        <i class="fas fa-cog me-1"></i>自定义天数
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('hourly')">
+                                        <i class="fas fa-hourglass-half me-1"></i>每小时
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every2hours')">
+                                        <i class="fas fa-clock me-1"></i>每2小时
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every4hours')">
+                                        <i class="fas fa-clock me-1"></i>每4小时
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every6hours')">
+                                        <i class="fas fa-clock me-1"></i>每6小时
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every15min')">
+                                        <i class="fas fa-sync-alt me-1"></i>每15分钟
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every30min')">
+                                        <i class="fas fa-sync-alt me-1"></i>每30分钟
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setQuickCycle('every45min')">
+                                        <i class="fas fa-sync-alt me-1"></i>每45分钟
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">提醒时间</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <select id="reminderHour" class="form-select">
+                                            @for (int i = 0; i < 24; i++)
+                                            {
+                                                if (i == 9)
+                                                {
+                                                    <option value="@i" selected>@i 点</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@i">@i 点</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <select id="reminderMinute" class="form-select">
+                                            @for (int i = 0; i < 60; i += 15)
+                                            {
+                                                if (i == 0)
+                                                {
+                                                    <option value="@i" selected>@i 分</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@i">@i 分</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">自定义天数</label>
+                                <div class="input-group">
+                                    <input type="number" id="customDays" class="form-control" value="30" min="1" max="365">
+                                    <span class="input-group-text">天</span>
+                                </div>
+                                <small class="form-text text-muted">设置账号多少天未访问后开始提醒</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">当前设置预览</label>
+                                <div class="alert alert-info">
+                                    <div id="currentSettingsPreview">
+                                        <i class="fas fa-spinner fa-spin me-1"></i>加载中...
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Cron表达式</label>
+                                <div class="input-group">
+                                    <input type="text" id="cronExpression" class="form-control" placeholder="0 9 * * *" >
+                                    <button type="button" class="btn btn-outline-secondary" onclick="copyCronExpression()">
+                                        <i class="fas fa-copy me-1"></i>复制
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">当前使用的定时表达式</small>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary" onclick="saveReminderSettings()">
+                                    <i class="fas fa-save me-1"></i>保存设置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提醒状态卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog me-2"></i>调度状态
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="schedulerStatus">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>统计信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="statistics">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 需要提醒的账号列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">需要提醒的账号</h5>
+                </div>
+                <div class="card-body">
+                    <div id="reminderAccounts">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/reminders.js"></script>
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟加载，确保页面完全渲染
+            setTimeout(() => {
+                loadSchedulerStatus();
+                loadStatistics();
+                loadReminderAccounts();
+                loadCurrentSettings();
+            }, 100);
+        });
+
+        // 设置快捷周期
+        function setQuickCycle(cycleType) {
+            const customDaysInput = document.getElementById('customDays');
+            const hourSelect = document.getElementById('reminderHour');
+            const minuteSelect = document.getElementById('reminderMinute');
+            const cronExpressionInput = document.getElementById('cronExpression');
+            
+            switch(cycleType) {
+                case 'daily':
+                    customDaysInput.value = '1';
+                    hourSelect.value = '9';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 9 * * *';
+                    break;
+                case 'weekly':
+                    customDaysInput.value = '7';
+                    hourSelect.value = '9';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 9 * * *';
+                    break;
+                case 'monthly':
+                    customDaysInput.value = '30';
+                    hourSelect.value = '9';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 9 * * *';
+                    break;
+                case 'custom':
+                    customDaysInput.value = '30';
+                    hourSelect.value = '9';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 9 * * *';
+                    customDaysInput.focus();
+                    break;
+                case 'hourly':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 * * * *';
+                    break;
+                case 'every2hours':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 */2 * * *';
+                    break;
+                case 'every4hours':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 */4 * * *';
+                    break;
+                case 'every6hours':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '0 */6 * * *';
+                    break;
+                case 'every15min':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '*/15 * * * *';
+                    break;
+                case 'every30min':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '*/30 * * * *';
+                    break;
+                case 'every45min':
+                    // 保持原来的提醒周期，只改变检查频率
+                    hourSelect.value = '0';
+                    minuteSelect.value = '0';
+                    cronExpressionInput.value = '*/45 * * * *';
+                    break;
+            }
+            
+            updateSettingsPreview();
+        }
+
+        // 复制Cron表达式
+        function copyCronExpression() {
+            const cronInput = document.getElementById('cronExpression');
+            cronInput.select();
+            document.execCommand('copy');
+            showToast('Cron表达式已复制到剪贴板', 'success');
+        }
+
+        // 更新设置预览
+        function updateSettingsPreview() {
+            const customDays = document.getElementById('customDays').value;
+            const hour = document.getElementById('reminderHour').value;
+            const minute = document.getElementById('reminderMinute').value;
+            const cronExpression = document.getElementById('cronExpression').value;
+            
+            const preview = document.getElementById('currentSettingsPreview');
+            
+            // 根据cron表达式类型显示不同的预览
+            if (cronExpression.includes('*/15') || cronExpression.includes('*/30') || cronExpression.includes('*/45')) {
+                // 分钟级别
+                const interval = cronExpression.split('*/')[1].split(' ')[0];
+                preview.innerHTML = `
+                    <div><strong>检查频率：</strong>每 ${interval} 分钟</div>
+                    <div><strong>提醒周期：</strong>每 ${customDays} 天</div>
+                    <div><strong>下次检查：</strong>${calculateNextCheckTime(cronExpression)}</div>
+                `;
+            } else if (cronExpression.includes('*/2') || cronExpression.includes('*/4') || cronExpression.includes('*/6')) {
+                // 小时级别
+                const interval = cronExpression.split('*/')[1].split(' ')[0];
+                preview.innerHTML = `
+                    <div><strong>检查频率：</strong>每 ${interval} 小时</div>
+                    <div><strong>提醒周期：</strong>每 ${customDays} 天</div>
+                    <div><strong>下次检查：</strong>${calculateNextCheckTime(cronExpression)}</div>
+                `;
+            } else if (cronExpression.includes('* * * *')) {
+                // 每小时
+                preview.innerHTML = `
+                    <div><strong>检查频率：</strong>每小时</div>
+                    <div><strong>提醒周期：</strong>每 ${customDays} 天</div>
+                    <div><strong>下次检查：</strong>${calculateNextCheckTime(cronExpression)}</div>
+                `;
+            } else {
+                // 每天固定时间
+                preview.innerHTML = `
+                    <div><strong>提醒周期：</strong>每 ${customDays} 天</div>
+                    <div><strong>提醒时间：</strong>每天 ${hour}:${minute.padStart(2, '0')}</div>
+                    <div><strong>下次提醒：</strong>${calculateNextReminder(hour, minute)}</div>
+                `;
+            }
+        }
+
+        // 计算下次提醒时间
+        function calculateNextReminder(hour, minute) {
+            const now = new Date();
+            const reminderTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(hour), parseInt(minute), 0);
+            
+            if (now > reminderTime) {
+                reminderTime.setDate(reminderTime.getDate() + 1);
+            }
+            
+            return reminderTime.toLocaleString('zh-CN');
+        }
+
+        // 计算下次检查时间（基于cron表达式）
+        function calculateNextCheckTime(cronExpression) {
+            try {
+                const now = new Date();
+                const parts = cronExpression.split(' ');
+                
+                if (parts.length >= 5) {
+                    const minute = parts[0];
+                    const hour = parts[1];
+                    
+                    // 处理分钟级别的间隔（如 */15, */30, */45）
+                    if (minute.startsWith('*/')) {
+                        const interval = parseInt(minute.substring(2));
+                        const currentMinute = now.getMinutes();
+                        const nextMinute = Math.ceil((currentMinute + 1) / interval) * interval;
+                        
+                        if (nextMinute >= 60) {
+                            const nextTime = new Date(now.getTime() + (60 - currentMinute) * 60000);
+                            return nextTime.toLocaleString('zh-CN');
+                        } else {
+                            const nextTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), nextMinute, 0);
+                            return nextTime.toLocaleString('zh-CN');
+                        }
+                    }
+                    
+                    // 处理小时级别的间隔（如 */2, */4, */6）
+                    if (hour.startsWith('*/')) {
+                        const interval = parseInt(hour.substring(2));
+                        const currentHour = now.getHours();
+                        const nextHour = Math.ceil((currentHour + 1) / interval) * interval;
+                        
+                        if (nextHour >= 24) {
+                            const nextTime = new Date(now.getTime() + (24 - currentHour) * 3600000);
+                            return nextTime.toLocaleString('zh-CN');
+                        } else {
+                            const nextTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextHour, 0, 0);
+                            return nextTime.toLocaleString('zh-CN');
+                        }
+                    }
+                    
+                    // 处理每小时的情况（如 0 * * * *）
+                    if (hour === '*' && minute !== '*') {
+                        const nextMinute = parseInt(minute);
+                        if (now.getMinutes() >= nextMinute) {
+                            const nextTime = new Date(now.getTime() + 3600000); // 加1小时
+                            return nextTime.toLocaleString('zh-CN');
+                        } else {
+                            const nextTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), nextMinute, 0);
+                            return nextTime.toLocaleString('zh-CN');
+                        }
+                    }
+                }
+                
+                // 如果无法解析，返回默认值
+                return '无法计算';
+            } catch (error) {
+                return '无法计算';
+            }
+        }
+
+        // 加载当前设置
+        function loadCurrentSettings() {
+            fetch('/api/reminders/settings')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const settings = data.data;
+                    document.getElementById('customDays').value = settings.defaultReminderCycle || 30;
+                    document.getElementById('reminderHour').value = settings.reminderHour || 9;
+                    document.getElementById('reminderMinute').value = settings.reminderMinute || 0;
+                    document.getElementById('cronExpression').value = settings.checkInterval || '0 9 * * *';
+                    updateSettingsPreview();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // 保存提醒设置
+        function saveReminderSettings() {
+            const customDays = document.getElementById('customDays').value;
+            const hour = document.getElementById('reminderHour').value;
+            const minute = document.getElementById('reminderMinute').value;
+            const cronExpression = document.getElementById('cronExpression').value;
+            
+            const settings = {
+                defaultReminderCycle: parseInt(customDays),
+                reminderHour: parseInt(hour),
+                reminderMinute: parseInt(minute),
+                checkInterval: cronExpression
+            };
+            
+            fetch('/api/reminders/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('设置保存成功', 'success');
+                    // 刷新调度状态
+                    setTimeout(() => {
+                        loadSchedulerStatus();
+                    }, 1000);
+                } else {
+                    showToast('保存失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('保存失败: ' + error.message, 'error');
+            });
+        }
+
+        // 绑定输入事件
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('customDays').addEventListener('input', updateSettingsPreview);
+            document.getElementById('reminderHour').addEventListener('change', updateSettingsPreview);
+            document.getElementById('reminderMinute').addEventListener('change', updateSettingsPreview);
+            document.getElementById('cronExpression').addEventListener('input', updateSettingsPreview);
+        });
+
+                 // 启动提醒调度
+         function startScheduler() {
+             const button = event.target.closest('button');
+             if (button) {
+                 button.disabled = true;
+                 button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>启动中...';
+             }
+
+             fetch('/api/reminders/start', {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 }
+             })
+             .then(response => {
+                 if (!response.ok) {
+                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                 }
+                 return response.json();
+             })
+             .then(data => {
+                 if (data.success) {
+                     showToast('提醒调度已启动', 'success');
+                     // 刷新数据
+                     setTimeout(() => {
+                         loadSchedulerStatus();
+                         loadStatistics();
+                         loadReminderAccounts();
+                     }, 2000);
+                 } else {
+                     showToast('启动失败: ' + (data.message || '未知错误'), 'error');
+                 }
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 showToast('启动失败: ' + error.message, 'error');
+             })
+             .finally(() => {
+                 if (button) {
+                     button.disabled = false;
+                     button.innerHTML = '<i class="fas fa-play me-1"></i>启动调度';
+                 }
+             });
+         }
+
+         // 停止提醒调度
+         function stopScheduler() {
+             const button = event.target.closest('button');
+             if (button) {
+                 button.disabled = true;
+                 button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>停止中...';
+             }
+
+             fetch('/api/reminders/stop', {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/json'
+                 }
+             })
+             .then(response => {
+                 if (!response.ok) {
+                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                 }
+                 return response.json();
+             })
+             .then(data => {
+                 if (data.success) {
+                     showToast('提醒调度已停止', 'success');
+                     // 刷新数据
+                     setTimeout(() => {
+                         loadSchedulerStatus();
+                         loadStatistics();
+                         loadReminderAccounts();
+                     }, 2000);
+                 } else {
+                     showToast('停止失败: ' + (data.message || '未知错误'), 'error');
+                 }
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 showToast('停止失败: ' + error.message, 'error');
+             })
+             .finally(() => {
+                 if (button) {
+                     button.disabled = false;
+                     button.innerHTML = '<i class="fas fa-stop me-1"></i>停止调度';
+                 }
+             });
+         }
+
+         // 手动触发提醒检查
+         function triggerReminderCheck() {
+            const button = event.target.closest('button');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>检查中...';
+            }
+
+            fetch('/api/reminders/trigger', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('提醒检查已触发', 'success');
+                    // 刷新数据
+                    setTimeout(() => {
+                        loadSchedulerStatus();
+                        loadStatistics();
+                        loadReminderAccounts();
+                    }, 2000);
+                } else {
+                    showToast('触发失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('触发失败: ' + error.message, 'error');
+            })
+                         .finally(() => {
+                 if (button) {
+                     button.disabled = false;
+                     button.innerHTML = '<i class="fas fa-sync me-1"></i>手动检查';
+                 }
+             });
+        }
+
+        // 加载调度状态
+        function loadSchedulerStatus() {
+            const statusElement = document.getElementById('schedulerStatus');
+            if (!statusElement) return;
+
+            fetch('/api/reminders/status')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const status = data.data;
+                    statusElement.innerHTML = `
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-${status.isRunning ? 'play text-success' : 'stop text-danger'} fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">${status.isRunning ? '运行中' : '已停止'}</h6>
+                                        <small class="text-muted">调度状态</small>
+                                    </div>
+                                </div>
+                            </div>
+                                                         <div class="col-6">
+                                 <div class="d-flex align-items-center">
+                                     <div class="me-3">
+                                         <i class="fas fa-clock fa-2x text-info"></i>
+                                     </div>
+                                     <div>
+                                         <h6 class="mb-1">${status.intervalDescription || '未设置'}</h6>
+                                         <small class="text-muted">检查间隔</small>
+                                         ${status.checkInterval && status.checkInterval !== status.intervalDescription ? 
+                                             `<br><small class="text-muted">(${status.checkInterval})</small>` : ''}
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">下次检查</small>
+                                <div>${status.nextCheck ? new Date(status.nextCheck).toLocaleString() : '未设置'}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">待处理任务</small>
+                                <div>${status.pendingJobs || 0}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    statusElement.innerHTML = `<div class="text-danger">加载失败: ${data.message || '未知错误'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusElement.innerHTML = `<div class="text-danger">加载失败: ${error.message}</div>`;
+            });
+        }
+
+        // 加载统计信息
+        function loadStatistics() {
+            const statsElement = document.getElementById('statistics');
+            if (!statsElement) return;
+
+            fetch('/api/reminders/statistics')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const stats = data.data;
+                    statsElement.innerHTML = `
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="h4 text-primary">${stats.totalAccounts || 0}</div>
+                                <small class="text-muted">总账号数</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-warning">${stats.accountsNeedingReminder || 0}</div>
+                                <small class="text-muted">需要提醒</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-success">${stats.accountsVisitedToday || 0}</div>
+                                <small class="text-muted">今日访问</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    statsElement.innerHTML = `<div class="text-danger">加载失败: ${data.message || '未知错误'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statsElement.innerHTML = `<div class="text-danger">加载失败: ${error.message}</div>`;
+            });
+        }
+
+        // 加载需要提醒的账号
+        function loadReminderAccounts() {
+            const accountsElement = document.getElementById('reminderAccounts');
+            if (!accountsElement) return;
+
+            fetch('/api/reminders/accounts')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const accounts = data.data || [];
+                    if (accounts.length > 0) {
+                        const html = accounts.map(account => `
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                                <div>
+                                    <h6 class="mb-1">${account.name || '未命名'}</h6>
+                                    <small class="text-muted">${account.username || '无用户名'}</small>
+                                    <br>
+                                    <small class="text-warning">${account.daysSinceLastVisit || 0} 天未访问</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="recordVisit('${account.id}')">
+                                        <i class="fas fa-check me-1"></i>标记已访问
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                        accountsElement.innerHTML = html;
+                    } else {
+                        accountsElement.innerHTML = 
+                            '<div class="text-center py-4 text-muted">没有需要提醒的账号</div>';
+                    }
+                } else {
+                    accountsElement.innerHTML = `<div class="text-danger">加载失败: ${data.message || '未知错误'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                accountsElement.innerHTML = `<div class="text-danger">加载失败: ${error.message}</div>`;
+            });
+        }
+
+        // 记录账号访问
+        function recordVisit(accountId) {
+            const button = event.target.closest('button');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>更新中...';
+            }
+
+            fetch(`/api/accounts/${accountId}/visit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('访问记录已更新', 'success');
+                    loadReminderAccounts();
+                } else {
+                    showToast('更新失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('更新失败: ' + error.message, 'error');
+            })
+            .finally(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-check me-1"></i>标记已访问';
+                }
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message, type) {
+            // 简单的提示实现
+            const alertClass = type === 'success' ? 'alert-success' : 
+                              type === 'error' ? 'alert-danger' : 
+                              type === 'warning' ? 'alert-warning' : 'alert-info';
+            
+            const toast = document.createElement('div');
+            toast.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // 自动移除
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 5000);
+        }
+    </script>
+}

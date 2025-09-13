@@ -1,0 +1,547 @@
+@page
+@model WebUI.Pages.Settings.IndexModel
+@{
+    ViewData["Title"] = "通知设置";
+}
+
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-cog me-2"></i>通知设置
+                </h1>
+                <div>
+                    <button class="btn btn-success me-2" onclick="testAllNotifications()">
+                        <i class="fas fa-paper-plane me-1"></i>测试所有通知
+                    </button>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save me-1"></i>保存设置
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置表单 -->
+    <form id="settingsForm">
+        <!-- 邮件设置 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-envelope me-2"></i>邮件通知设置
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="emailEnabled" onchange="toggleEmailSettings()">
+                            <label class="form-check-label" for="emailEnabled">
+                                启用邮件通知
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="testEmailSettings()">
+                            <i class="fas fa-vial me-1"></i>测试配置
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="emailSettings" style="display: none;">
+                    <div class="alert alert-warning">
+                        如使用 Gmail API，请在下方勾选并填写 ClientId/ClientSecret/RefreshToken；否则使用 SMTP。
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="useGmailApi" checked>
+                                <label class="form-check-label" for="useGmailApi">
+                                    使用 Gmail API 发送（默认开启）
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="gmailSettings">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="gmailClientId" class="form-label">Gmail Client ID</label>
+                                    <input type="text" class="form-control" id="gmailClientId" placeholder="Google Cloud OAuth Client ID">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="gmailClientSecret" class="form-label">Gmail Client Secret</label>
+                                    <input type="text" class="form-control" id="gmailClientSecret" placeholder="Google Cloud OAuth Client Secret">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="gmailRefreshToken" class="form-label">Gmail Refresh Token</label>
+                                    <input type="text" class="form-control" id="gmailRefreshToken" placeholder="OAuth 刷新令牌">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emailSubjectTemplate" class="form-label">邮件主题模板</label>
+                                <input type="text" class="form-control" id="emailSubjectTemplate" placeholder="账号提醒 - {AccountName}">
+                                <div class="form-text">可用变量：{AccountName} {AccountId} {Now}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emailBodyTemplate" class="form-label">邮件正文模板</label>
+                                <input type="text" class="form-control" id="emailBodyTemplate" placeholder="账号 '{AccountName}' 需要访问，请及时登录。时间: {Now}">
+                                <div class="form-text">可用变量：{AccountName} {AccountId} {Now}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtpServer" class="form-label">SMTP服务器</label>
+                                <input type="text" class="form-control" id="smtpServer" placeholder="例如: smtp.gmail.com">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtpPort" class="form-label">SMTP端口</label>
+                                <input type="number" class="form-control" id="smtpPort" value="587">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fromEmail" class="form-label">发件人邮箱</label>
+                                <input type="email" class="form-control" id="fromEmail" placeholder="your-email@gmail.com">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fromName" class="form-label">发件人名称</label>
+                                <input type="text" class="form-control" id="fromName" placeholder="账号管理系统">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emailUsername" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="emailUsername" placeholder="邮箱用户名">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="emailPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="emailPassword" placeholder="邮箱密码或应用密码">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="useSsl" checked>
+                                <label class="form-check-label" for="useSsl">
+                                    使用SSL/TLS
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="toEmails" class="form-label">收件人邮箱</label>
+                                <input type="text" class="form-control" id="toEmails" placeholder="多个邮箱用逗号分隔">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telegram设置 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fab fa-telegram me-2"></i>Telegram通知设置
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="telegramEnabled" onchange="toggleTelegramSettings()">
+                            <label class="form-check-label" for="telegramEnabled">
+                                启用Telegram通知
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="testTelegramSettings()">
+                            <i class="fas fa-vial me-1"></i>测试配置
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="telegramSettings" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="botToken" class="form-label">Bot Token</label>
+                                <input type="text" class="form-control" id="botToken" placeholder="从 @@BotFather 获取的Token">
+                                <div class="form-text">在Telegram中搜索 @@BotFather 创建机器人获取Token</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="chatId" class="form-label">聊天ID</label>
+                                <input type="text" class="form-control" id="chatId" placeholder="个人聊天ID或群组ID">
+                                <div class="form-text">可以使用 @@userinfobot 获取您的聊天ID</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableMarkdown" checked>
+                        <label class="form-check-label" for="enableMarkdown">
+                            启用Markdown格式
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="telegramTextTemplate" class="form-label">Telegram 文本模板</label>
+                        <textarea class="form-control" id="telegramTextTemplate" rows="3" placeholder="*账号提醒*\n账号: `{AccountName}`\n时间: {Now}"></textarea>
+                        <div class="form-text">可用变量：{AccountName} {AccountId} {Now}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SignalR设置 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-broadcast-tower me-2"></i>SignalR通知设置
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="signalrEnabled" checked>
+                    <label class="form-check-label" for="signalrEnabled">
+                        启用SignalR实时通知
+                    </label>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="notificationTitle" class="form-label">通知标题</label>
+                            <input type="text" class="form-control" id="notificationTitle" value="账号提醒">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="notificationIcon" class="form-label">通知图标</label>
+                            <input type="text" class="form-control" id="notificationIcon" value="/favicon.ico">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提醒设置 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>提醒设置
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="autoReminderEnabled" checked>
+                    <label class="form-check-label" for="autoReminderEnabled">
+                        启用自动提醒
+                    </label>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="checkInterval" class="form-label">检查间隔</label>
+                            <select class="form-select" id="checkInterval">
+                                <option value="0 * * * *">每小时</option>
+                                <option value="0 */2 * * *">每2小时</option>
+                                <option value="0 */6 * * *">每6小时</option>
+                                <option value="0 0 * * *">每天</option>
+                                <option value="0 0 * * 0">每周</option>
+                            </select>
+                            <div class="form-text">使用Cron表达式格式</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="defaultReminderCycle" class="form-label">默认提醒周期（天）</label>
+                            <input type="number" class="form-control" id="defaultReminderCycle" value="30" min="1" max="365">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="reminderHour" class="form-label">提醒时间（小时）</label>
+                            <input type="number" class="form-control" id="reminderHour" value="9" min="0" max="23">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="reminderMinute" class="form-label">提醒时间（分钟）</label>
+                            <input type="number" class="form-control" id="reminderMinute" value="0" min="0" max="59">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+        });
+
+        // 加载设置
+        function loadSettings() {
+            fetch('/api/settings/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const settings = data.data;
+                    
+                    // 邮件设置
+                    document.getElementById('emailEnabled').checked = settings.email.isEnabled;
+                    document.getElementById('smtpServer').value = settings.email.smtpServer || '';
+                    document.getElementById('smtpPort').value = settings.email.smtpPort || 587;
+                    document.getElementById('fromEmail').value = settings.email.fromEmail || '';
+                    document.getElementById('fromName').value = settings.email.fromName || '';
+                    document.getElementById('emailUsername').value = settings.email.username || '';
+                    document.getElementById('emailPassword').value = settings.email.password || '';
+                    document.getElementById('useSsl').checked = settings.email.useSsl;
+                    document.getElementById('toEmails').value = settings.email.toEmails || '';
+                    document.getElementById('useGmailApi').checked = settings.email.useGmailApi ?? true;
+                    document.getElementById('gmailClientId').value = settings.email.gmailClientId || '';
+                    document.getElementById('gmailClientSecret').value = settings.email.gmailClientSecret || '';
+                    document.getElementById('gmailRefreshToken').value = settings.email.gmailRefreshToken || '';
+                    document.getElementById('emailSubjectTemplate').value = settings.email.subjectTemplate || '';
+                    document.getElementById('emailBodyTemplate').value = settings.email.bodyTemplate || '';
+                    
+                    // Telegram设置
+                    document.getElementById('telegramEnabled').checked = settings.telegram.isEnabled;
+                    document.getElementById('botToken').value = settings.telegram.botToken || '';
+                    document.getElementById('chatId').value = settings.telegram.chatId || '';
+                    document.getElementById('enableMarkdown').checked = settings.telegram.enableMarkdown;
+                    document.getElementById('telegramTextTemplate').value = settings.telegram.textTemplate || '';
+                    
+                    // SignalR设置
+                    document.getElementById('signalrEnabled').checked = settings.signalR.isEnabled;
+                    document.getElementById('notificationTitle').value = settings.signalR.notificationTitle || '';
+                    document.getElementById('notificationIcon').value = settings.signalR.notificationIcon || '';
+                    
+                    // 提醒设置
+                    document.getElementById('autoReminderEnabled').checked = settings.reminder.enableAutoReminder;
+                    document.getElementById('checkInterval').value = settings.reminder.checkInterval || '0 * * * *';
+                    document.getElementById('defaultReminderCycle').value = settings.reminder.defaultReminderCycle || 30;
+                    document.getElementById('reminderHour').value = settings.reminder.reminderHour || 9;
+                    document.getElementById('reminderMinute').value = settings.reminder.reminderMinute || 0;
+                    
+                    // 更新显示状态
+                    toggleEmailSettings();
+                    toggleTelegramSettings();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('加载设置失败', 'error');
+            });
+        }
+
+        // 切换邮件设置显示
+        function toggleEmailSettings() {
+            const enabled = document.getElementById('emailEnabled').checked;
+            document.getElementById('emailSettings').style.display = enabled ? 'block' : 'none';
+        }
+
+        // 切换Telegram设置显示
+        function toggleTelegramSettings() {
+            const enabled = document.getElementById('telegramEnabled').checked;
+            document.getElementById('telegramSettings').style.display = enabled ? 'block' : 'none';
+        }
+
+        // 保存设置
+        function saveSettings() {
+            const settings = {
+                email: {
+                    isEnabled: document.getElementById('emailEnabled').checked,
+                    smtpServer: document.getElementById('smtpServer').value,
+                    smtpPort: parseInt(document.getElementById('smtpPort').value),
+                    fromEmail: document.getElementById('fromEmail').value,
+                    fromName: document.getElementById('fromName').value,
+                    username: document.getElementById('emailUsername').value,
+                    password: document.getElementById('emailPassword').value,
+                    useSsl: document.getElementById('useSsl').checked,
+                    toEmails: document.getElementById('toEmails').value,
+                    useGmailApi: document.getElementById('useGmailApi').checked,
+                    gmailClientId: document.getElementById('gmailClientId').value,
+                    gmailClientSecret: document.getElementById('gmailClientSecret').value,
+                    gmailRefreshToken: document.getElementById('gmailRefreshToken').value,
+                    subjectTemplate: document.getElementById('emailSubjectTemplate').value,
+                    bodyTemplate: document.getElementById('emailBodyTemplate').value
+                },
+                telegram: {
+                    isEnabled: document.getElementById('telegramEnabled').checked,
+                    botToken: document.getElementById('botToken').value,
+                    chatId: document.getElementById('chatId').value,
+                    enableMarkdown: document.getElementById('enableMarkdown').checked,
+                    textTemplate: document.getElementById('telegramTextTemplate').value
+                },
+                signalR: {
+                    isEnabled: document.getElementById('signalrEnabled').checked,
+                    notificationTitle: document.getElementById('notificationTitle').value,
+                    notificationIcon: document.getElementById('notificationIcon').value
+                },
+                reminder: {
+                    enableAutoReminder: document.getElementById('autoReminderEnabled').checked,
+                    checkInterval: document.getElementById('checkInterval').value,
+                    defaultReminderCycle: parseInt(document.getElementById('defaultReminderCycle').value),
+                    reminderHour: parseInt(document.getElementById('reminderHour').value),
+                    reminderMinute: parseInt(document.getElementById('reminderMinute').value)
+                }
+            };
+
+            fetch('/api/settings/notifications', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('设置保存成功', 'success');
+                } else {
+                    showToast('保存失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('保存失败', 'error');
+            });
+        }
+
+        // 测试邮件配置
+        function testEmailSettings() {
+            const settings = {
+                isEnabled: document.getElementById('emailEnabled').checked,
+                smtpServer: document.getElementById('smtpServer').value,
+                smtpPort: parseInt(document.getElementById('smtpPort').value),
+                fromEmail: document.getElementById('fromEmail').value,
+                fromName: document.getElementById('fromName').value,
+                username: document.getElementById('emailUsername').value,
+                password: document.getElementById('emailPassword').value,
+                useSsl: document.getElementById('useSsl').checked,
+                toEmails: document.getElementById('toEmails').value,
+                useGmailApi: document.getElementById('useGmailApi').checked,
+                gmailClientId: document.getElementById('gmailClientId').value,
+                gmailClientSecret: document.getElementById('gmailClientSecret').value,
+                gmailRefreshToken: document.getElementById('gmailRefreshToken').value
+            };
+
+            fetch('/api/settings/test-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('邮件配置测试成功', 'success');
+                } else {
+                    showToast('测试失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('测试失败', 'error');
+            });
+        }
+
+        // 测试Telegram配置
+        function testTelegramSettings() {
+            const settings = {
+                isEnabled: document.getElementById('telegramEnabled').checked,
+                botToken: document.getElementById('botToken').value,
+                chatId: document.getElementById('chatId').value,
+                enableMarkdown: document.getElementById('enableMarkdown').checked
+            };
+
+            fetch('/api/settings/test-telegram', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Telegram配置测试成功', 'success');
+                } else {
+                    showToast('测试失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('测试失败', 'error');
+            });
+        }
+
+        // 测试所有通知
+        function testAllNotifications() {
+            fetch('/api/settings/test-all', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('所有通知测试成功', 'success');
+                } else {
+                    showToast('测试失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('测试失败', 'error');
+            });
+        }
+
+        // 显示提示消息
+        function showToast(message, type) {
+            // 这里可以使用任何toast库，或者简单的alert
+            alert(message);
+        }
+    </script>
+}

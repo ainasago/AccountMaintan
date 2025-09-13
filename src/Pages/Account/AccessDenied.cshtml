@@ -1,0 +1,36 @@
+@page
+@model WebUI.Pages.Account.AccessDeniedModel
+@{
+    ViewData["Title"] = "访问被拒绝";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card shadow border-0 mt-5">
+                <div class="card-header bg-danger text-white text-center py-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-ban me-2"></i>访问被拒绝
+                    </h4>
+                </div>
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                    </div>
+                    <h5 class="mb-3">抱歉，您没有权限访问此页面</h5>
+                    <p class="text-muted mb-4">
+                        您可能需要登录或者没有足够的权限访问此资源。
+                    </p>
+                    <div class="d-grid gap-2 d-md-block">
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>返回首页
+                        </a>
+                        <a asp-page="/Account/Login" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>重新登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

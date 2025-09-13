@@ -1,0 +1,204 @@
+@page
+@model WebUI.Pages.HangfireSettings.IndexModel
+@{
+    ViewData["Title"] = "Hangfire 设置";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-cogs"></i>
+                        Hangfire 面板设置
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="hangfireSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enableDashboard" checked>
+                                    <label class="form-check-label" for="enableDashboard">
+                                        启用 Hangfire Dashboard
+                                    </label>
+                                    <div class="form-text">启用后可以通过配置的路径访问任务调度面板</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="dashboardPath" class="form-label">访问路径</label>
+                                    <input type="text" class="form-control" id="dashboardPath" value="/hangfire" placeholder="/hangfire">
+                                    <div class="form-text">Dashboard 的访问路径，默认为 /hangfire</div>
+                                </div>
+
+                                                                 <div class="form-check form-switch mb-3">
+                                     <input class="form-check-input" type="checkbox" id="enableBasicAuth">
+                                     <label class="form-check-label" for="enableBasicAuth">
+                                         启用基本认证
+                                     </label>
+                                     <div class="form-text">启用后访问面板需要输入用户名和密码</div>
+                                 </div>
+
+                                 <div class="form-check form-switch mb-3">
+                                     <input class="form-check-input" type="checkbox" id="allowAuthenticatedUsers" checked>
+                                     <label class="form-check-label" for="allowAuthenticatedUsers">
+                                         允许已登录用户访问
+                                     </label>
+                                     <div class="form-text">启用后已登录系统的用户可以访问面板</div>
+                                 </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">用户名</label>
+                                    <input type="text" class="form-control" id="username" value="admin" placeholder="admin">
+                                    <div class="form-text">访问面板的用户名</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">密码</label>
+                                    <input type="password" class="form-control" id="password" value="admin123" placeholder="密码">
+                                    <div class="form-text">访问面板的密码</div>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> 使用说明</h6>
+                                    <ul class="mb-0">
+                                                                             <li>修改设置后需要重启应用程序才能生效</li>
+                                     <li>当前默认访问路径：<code>/hangfire</code></li>
+                                     <li>默认用户名：<code>admin</code>，密码：<code>admin123</code></li>
+                                     <li>建议修改默认密码以提高安全性</li>
+                                     <li>如果启用"允许已登录用户访问"，已登录系统的用户可以直接访问面板</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    保存设置
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="loadSettings()">
+                                    <i class="fas fa-refresh"></i>
+                                    重新加载
+                                </button>
+                                <a href="/hangfire" class="btn btn-success" target="_blank">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    访问面板
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 页面加载时获取设置
+        $(document).ready(function() {
+            loadSettings();
+        });
+
+        // 加载设置
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/HangfireSettings');
+                if (response.ok) {
+                    const settings = await response.json();
+                    
+                                         document.getElementById('enableDashboard').checked = settings.enableDashboard;
+                     document.getElementById('dashboardPath').value = settings.dashboardPath;
+                     document.getElementById('enableBasicAuth').checked = settings.enableBasicAuth;
+                     document.getElementById('allowAuthenticatedUsers').checked = settings.allowAuthenticatedUsers;
+                     document.getElementById('username').value = settings.username;
+                     document.getElementById('password').value = settings.password;
+                    
+                    showToast('设置加载成功', 'success');
+                } else {
+                    showToast('加载设置失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载设置失败:', error);
+                showToast('加载设置失败', 'error');
+            }
+        }
+
+        // 保存设置
+        document.getElementById('hangfireSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+                         const settings = {
+                 enableDashboard: document.getElementById('enableDashboard').checked,
+                 dashboardPath: document.getElementById('dashboardPath').value,
+                 enableBasicAuth: document.getElementById('enableBasicAuth').checked,
+                 allowAuthenticatedUsers: document.getElementById('allowAuthenticatedUsers').checked,
+                 username: document.getElementById('username').value,
+                 password: document.getElementById('password').value
+             };
+
+            try {
+                const response = await fetch('/api/HangfireSettings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast(result.message || '设置保存成功', 'success');
+                } else {
+                    const error = await response.json();
+                    showToast(error.message || '保存设置失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存设置失败:', error);
+                showToast('保存设置失败', 'error');
+            }
+        });
+
+        // 显示提示消息
+        function showToast(message, type = 'info') {
+            const toastClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
+            const toast = `
+                <div class="toast align-items-center ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+            toastContainer.insertAdjacentHTML('beforeend', toast);
+            
+            const toastElement = toastContainer.lastElementChild;
+            const bsToast = new bootstrap.Toast(toastElement);
+            bsToast.show();
+            
+            // 自动移除 toast 元素
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+
+        // 创建 toast 容器
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+    </script>
+}

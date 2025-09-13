@@ -1,0 +1,15 @@
+@page
+@model WebUI.Pages.Accounts.ExportModel
+@{
+    ViewData["Title"] = "导出账号";
+}
+
+<div class="alert alert-info">
+    正在导出账号数据...
+    <a class="btn btn-link" asp-page="/Accounts/Index">返回列表</a>
+    <noscript>
+        如果浏览器未自动下载，请 <a asp-page="/Accounts/Export">点击这里</a>
+    </noscript>
+</div>
+
+

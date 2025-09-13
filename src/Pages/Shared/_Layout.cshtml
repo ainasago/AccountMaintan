@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - 账号资源管理系统</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">
+                    <i class="fas fa-key me-2"></i>账号资源管理系统
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">
+                                <i class="fas fa-home me-1"></i>首页
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Accounts/Index">
+                                <i class="fas fa-key me-1"></i>账号管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Reminders/Index">
+                                <i class="fas fa-bell me-1"></i>提醒管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/Settings/Index">
+                                <i class="fas fa-cog me-1"></i>系统设置
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Security/Index">
+                                <i class="fas fa-shield-alt me-1"></i>安全设置
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/HangfireSettings/Index">
+                                <i class="fas fa-tasks me-1"></i>任务调度
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/ReminderRecords/Index">
+                                <i class="fas fa-history me-1"></i>提醒历史
+                            </a>
+                        </li>
+                        <li class="nav-item" id="adminMenu" style="display: none;">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Users/Index">
+                                <i class="fas fa-users me-1"></i>用户管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="adminSettingsMenu" style="display: none;">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Settings">
+                                <i class="fas fa-cogs me-1"></i>系统管理
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user me-1"></i>
+                                    @(User.Identity.Name ?? "用户")
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" asp-page="/Account/ChangePassword"><i class="fas fa-user-cog me-2"></i>个人设置</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                                                         <li>
+                                         <a class="dropdown-item" href="/Account/Logout">
+                                             <i class="fas fa-sign-out-alt me-2"></i>退出登录
+                                         </a>
+                                     </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-page="/Account/Login">
+                                    <i class="fas fa-sign-in-alt me-1"></i>登录
+                                </a>
+                            </li>
+                            
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container-fluid">
+            &copy; 2024 - 账号资源管理系统 - <a asp-area="" asp-page="/Privacy">隐私政策</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
