@@ -2,12 +2,42 @@
 
 // 全局变量
 let reminderHub;
+let csrfToken = null;
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initializeSignalR();
     initializeEventListeners();
+    initializeCsrfToken();
 });
+
+// 初始化CSRF令牌
+async function initializeCsrfToken() {
+    try {
+        const response = await fetch('/api/admin/csrf-token', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                csrfToken = data.token;
+                console.log('CSRF令牌已获取');
+            }
+        }
+    } catch (error) {
+        console.error('获取CSRF令牌失败:', error);
+    }
+}
+
+// 获取CSRF令牌（如果不存在则重新获取）
+async function getCsrfToken() {
+    if (!csrfToken) {
+        await initializeCsrfToken();
+    }
+    return csrfToken;
+}
 
 // 初始化SignalR连接
 function initializeSignalR() {
@@ -66,11 +96,18 @@ async function handleAddAccount(e) {
     };
 
     try {
+        const token = await getCsrfToken();
+        const headers = {
+            'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+            headers['X-CSRF-TOKEN'] = token;
+        }
+        
         const response = await fetch('/api/accounts', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: headers,
             body: JSON.stringify(accountData)
         });
 
@@ -119,8 +156,16 @@ function editAccount(accountId) {
 // 记录账号访问
 async function recordVisit(accountId) {
     try {
+        const token = await getCsrfToken();
+        const headers = {};
+        
+        if (token) {
+            headers['X-CSRF-TOKEN'] = token;
+        }
+        
         const response = await fetch(`/api/accounts/${accountId}/visit`, {
-            method: 'POST'
+            method: 'POST',
+            headers: headers
         });
 
         if (response.ok) {
@@ -143,8 +188,16 @@ async function deleteAccount(accountId) {
     }
 
     try {
+        const token = await getCsrfToken();
+        const headers = {};
+        
+        if (token) {
+            headers['X-CSRF-TOKEN'] = token;
+        }
+        
         const response = await fetch(`/api/accounts/${accountId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: headers
         });
 
         if (response.ok) {

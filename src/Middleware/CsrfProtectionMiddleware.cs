@@ -45,7 +45,11 @@ public class CsrfProtectionMiddleware
                     context.Request.Path, context.Connection.RemoteIpAddress);
                 
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("CSRF令牌验证失败");
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new { 
+                    success = false, 
+                    message = "CSRF令牌验证失败" 
+                }));
                 return;
             }
         }

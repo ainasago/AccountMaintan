@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebUI.Models;
 using WebUI.Services;
+using WebUI.Middleware;
 
 namespace WebUI.Controllers;
 
@@ -177,6 +178,32 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "获取管理员设置失败");
             return StatusCode(500, new { success = false, message = "获取管理员设置失败" });
+        }
+    }
+
+    /// <summary>
+    /// 获取CSRF令牌
+    /// </summary>
+    [HttpGet("csrf-token")]
+    public IActionResult GetCsrfToken()
+    {
+        try
+        {
+            var csrfTokenService = HttpContext.RequestServices.GetService<ICsrfTokenService>();
+            if (csrfTokenService == null)
+            {
+                return Ok(new { success = false, message = "CSRF服务不可用" });
+            }
+
+            var token = csrfTokenService.GenerateToken();
+            csrfTokenService.SetTokenCookie(HttpContext, token);
+            
+            return Ok(new { success = true, token = token });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取CSRF令牌失败");
+            return StatusCode(500, new { success = false, message = "获取CSRF令牌失败" });
         }
     }
 
