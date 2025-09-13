@@ -1,0 +1,136 @@
+@page
+@model WebUI.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "用户注册";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card shadow border-0 mt-5">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>用户注册
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form id="registerForm" method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                        
+                        <div class="form-group mb-3">
+                            <label asp-for="Input.DisplayName" class="form-label">显示名称</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <input asp-for="Input.DisplayName" class="form-control" placeholder="请输入显示名称" />
+                            </div>
+                            <span asp-validation-for="Input.DisplayName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Input.Email" class="form-label">邮箱地址</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-envelope"></i>
+                                </span>
+                                <input asp-for="Input.Email" class="form-control" placeholder="请输入邮箱地址" />
+                            </div>
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Input.Password" class="form-label">密码</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input asp-for="Input.Password" type="password" class="form-control" placeholder="请输入密码" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('Input_Password')">
+                                    <i class="fas fa-eye" id="Input_Password_icon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
+                            <div class="form-text">
+                                密码至少6位，包含数字和小写字母。
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Input.ConfirmPassword" class="form-label">确认密码</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                                <input asp-for="Input.ConfirmPassword" type="password" class="form-control" placeholder="请再次输入密码" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('Input_ConfirmPassword')">
+                                    <i class="fas fa-eye" id="Input_ConfirmPassword_icon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" id="registerBtn" class="btn @(Model.IsProcessing ? "btn-secondary" : "btn-success")" @(Model.IsProcessing ? "disabled" : "")>
+                                <i class="fas @(Model.IsProcessing ? "fa-spinner fa-spin" : "fa-user-plus") me-2"></i><span id="registerText">@(Model.IsProcessing ? "注册中..." : "注册")</span>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-2">已有账号？</p>
+                        <a asp-page="./Login" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>立即登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '_icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // 防止重复点击注册按钮
+        $(document).ready(function() {
+            $('#registerForm').on('submit', function(e) {
+                const submitBtn = $('#registerBtn');
+                const registerText = $('#registerText');
+                
+                // 如果按钮已经被禁用，阻止提交
+                if (submitBtn.prop('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // 禁用按钮并显示加载状态
+                submitBtn.prop('disabled', true);
+                registerText.text('注册中...');
+                submitBtn.addClass('btn-secondary').removeClass('btn-success');
+                
+                // 添加加载图标
+                const icon = submitBtn.find('i');
+                icon.removeClass('fa-user-plus').addClass('fa-spinner fa-spin');
+            });
+        });
+    </script>
+}
