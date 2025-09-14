@@ -2,18 +2,17 @@
 @model WebUI.Pages.Account.AccessDeniedModel
 @{
     ViewData["Title"] = "访问被拒绝";
+    Layout = "~/Pages/Shared/_LoginLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8">
-            <div class="card shadow border-0 mt-5">
-                <div class="card-header bg-danger text-white text-center py-4">
-                    <h4 class="mb-0">
-                        <i class="fas fa-ban me-2"></i>访问被拒绝
-                    </h4>
-                </div>
-                <div class="card-body text-center p-5">
+<div class="login-card">
+    <div class="login-header">
+        <h4>
+            <i class="fas fa-ban me-2"></i>访问被拒绝
+        </h4>
+        <p class="mb-0 mt-2">您没有权限访问此页面</p>
+    </div>
+    <div class="login-body text-center">
                     <div class="mb-4">
                         <i class="fas fa-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
                     </div>
@@ -29,8 +28,5 @@
                             <i class="fas fa-sign-in-alt me-2"></i>重新登录
                         </a>
                     </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>

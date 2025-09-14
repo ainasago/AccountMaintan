@@ -4,123 +4,209 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - 账号资源管理系统</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">
-                    <i class="fas fa-key me-2"></i>账号资源管理系统
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <!-- 导航栏 -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- 左侧导航栏 -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                        <i class="fas fa-bars"></i>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- 右侧导航栏 -->
+            <ul class="navbar-nav ml-auto">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user me-1"></i>
+                            @(User.Identity.Name ?? "用户")
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" asp-page="/Account/ChangePassword">
+                                <i class="fas fa-user-cog me-2"></i>个人设置
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/Account/Logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>退出登录
+                            </a>
+                        </div>
+                    </li>
+                }
+                else
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-page="/Account/Login">
+                            <i class="fas fa-sign-in-alt me-1"></i>登录
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <!-- 侧边栏 -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <!-- 品牌Logo -->
+            <a href="/" class="brand-link">
+                <i class="fas fa-key brand-image"></i>
+                <span class="brand-text font-weight-light">账号资源管理</span>
+            </a>
+
+            <!-- 侧边栏菜单 -->
+            <div class="sidebar">
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                        <!-- 首页 -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">
-                                <i class="fas fa-home me-1"></i>首页
+                            <a asp-page="/Index" class="nav-link">
+                                <i class="nav-icon fas fa-home"></i>
+                                <p>首页</p>
                             </a>
                         </li>
+
+                        <!-- 账号管理 -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Accounts/Index">
-                                <i class="fas fa-key me-1"></i>账号管理
+                            <a asp-page="/Accounts/Index" class="nav-link">
+                                <i class="nav-icon fas fa-key"></i>
+                                <p>账号管理</p>
                             </a>
                         </li>
+
+                        <!-- 提醒管理 -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Reminders/Index">
-                                <i class="fas fa-bell me-1"></i>提醒管理
+                            <a asp-page="/Reminders/Index" class="nav-link">
+                                <i class="nav-icon fas fa-bell"></i>
+                                <p>提醒管理</p>
                             </a>
                         </li>
-                        <li class="nav-item" id="settingsMenu" style="display: none;">
-                            <a class="nav-link text-dark" asp-page="/Settings/Index">
-                                <i class="fas fa-cog me-1"></i>系统设置
-                            </a>
-                        </li>
-                      
-                        <li class="nav-item" id="hangfireMenu" style="display: none;">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/HangfireSettings/Index">
-                                <i class="fas fa-tasks me-1"></i>任务调度
-                            </a>
-                        </li>
+
+                        <!-- 提醒历史 -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/ReminderRecords/Index">
-                                <i class="fas fa-history me-1"></i>提醒历史
+                            <a asp-page="/ReminderRecords/Index" class="nav-link">
+                                <i class="nav-icon fas fa-history"></i>
+                                <p>提醒历史</p>
                             </a>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-dark" href="#" id="websiteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-globe me-1"></i>网站管理
+
+                        <!-- 网站管理 -->
+                        <li class="nav-item has-treeview">
+                            <a href="#" class="nav-link">
+                                <i class="nav-icon fas fa-globe"></i>
+                                <p>
+                                    网站管理
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
-                            <ul class="dropdown-menu" aria-labelledby="websiteDropdown">
-                                <li><a class="dropdown-item" asp-page="/Websites/Index"><i class="fas fa-globe me-2"></i>网站列表</a></li>
-                                <li><a class="dropdown-item" asp-page="/Servers/Index"><i class="fas fa-server me-2"></i>服务器管理</a></li>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a asp-page="/Websites/Index" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>网站列表</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a asp-page="/Servers/Index" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>服务器管理</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
+
+                        <!-- 系统设置 -->
+                        <li class="nav-item" id="settingsMenu" style="display: none;">
+                            <a asp-page="/Settings/Index" class="nav-link">
+                                <i class="nav-icon fas fa-cog"></i>
+                                <p>系统设置</p>
+                            </a>
+                        </li>
+
+                        <!-- 任务调度 -->
+                        <li class="nav-item" id="hangfireMenu" style="display: none;">
+                            <a asp-page="/HangfireSettings/Index" class="nav-link">
+                                <i class="nav-icon fas fa-tasks"></i>
+                                <p>任务调度</p>
+                            </a>
+                        </li>
+
+                        <!-- 管理员菜单 -->
+                        <li class="nav-header">管理员功能</li>
                         <li class="nav-item" id="adminMenu" style="display: none;">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Users/Index">
-                                <i class="fas fa-users me-1"></i>用户管理
+                            <a asp-page="/Admin/Users/Index" class="nav-link">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>用户管理</p>
                             </a>
                         </li>
                         <li class="nav-item" id="adminSettingsMenu" style="display: none;">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Settings">
-                                <i class="fas fa-cogs me-1"></i>系统管理
+                            <a asp-page="/Admin/Settings" class="nav-link">
+                                <i class="nav-icon fas fa-cogs"></i>
+                                <p>系统管理</p>
                             </a>
                         </li>
                     </ul>
-                    <ul class="navbar-nav ms-auto">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user me-1"></i>
-                                    @(User.Identity.Name ?? "用户")
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <li><a class="dropdown-item" asp-page="/Account/ChangePassword"><i class="fas fa-user-cog me-2"></i>个人设置</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                                                         <li>
-                                         <a class="dropdown-item" href="/Account/Logout">
-                                             <i class="fas fa-sign-out-alt me-2"></i>退出登录
-                                         </a>
-                                     </li>
-                                </ul>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-page="/Account/Login">
-                                    <i class="fas fa-sign-in-alt me-1"></i>登录
-                                </a>
-                            </li>
-                            
-                        }
-                    </ul>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- 内容区域 -->
+        <div class="content-wrapper">
+            <!-- 内容头部 -->
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1 class="m-0">@ViewData["Title"]</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="/">首页</a></li>
+                                <li class="breadcrumb-item active">@ViewData["Title"]</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container-fluid">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+            <!-- 主要内容 -->
+            <section class="content">
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+            </section>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="main-footer">
+            <div class="float-right d-none d-sm-block">
+                <b>版本</b> 1.0.0
+            </div>
+            <strong>Copyright &copy; 2024 <a href="/">账号资源管理系统</a>.</strong>
+            保留所有权利。
+        </footer>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container-fluid">
-            &copy; 2024 - 账号资源管理系统 - <a asp-area="" asp-page="/Privacy">隐私政策</a>
-        </div>
-    </footer>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <!-- SignalR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <!-- Custom Scripts -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

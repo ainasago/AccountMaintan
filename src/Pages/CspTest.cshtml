@@ -1,0 +1,158 @@
+@page
+@model WebUI.Pages.CspTestModel
+@{
+    ViewData["Title"] = "CSP测试页面";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shield-alt me-2"></i>内容安全策略(CSP)测试
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>测试说明</h5>
+                        <p>此页面用于测试CSP配置是否正确。如果CSP配置正确，以下测试应该都能正常工作：</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>内联样式测试</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div style="background-color: #e3f2fd; padding: 10px; border-radius: 5px; color: #1976d2;">
+                                        如果看到蓝色背景，说明内联样式被允许
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>内联脚本测试</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button class="btn btn-primary" onclick="testInlineScript()">点击测试内联脚本</button>
+                                    <div id="inlineScriptResult" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>外部资源测试</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>测试外部CDN资源加载：</p>
+                                    <div id="externalResourceTest">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span>Font Awesome图标正常显示</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>AJAX请求测试</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button class="btn btn-success" onclick="testAjaxRequest()">测试AJAX请求</button>
+                                    <div id="ajaxResult" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>CSP违规测试（应该被阻止）</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <p>以下测试应该被CSP阻止，如果看到错误信息，说明CSP工作正常：</p>
+                                    </div>
+                                    <button class="btn btn-warning" onclick="testCspViolation()">测试CSP违规</button>
+                                    <div id="cspViolationResult" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>当前CSP策略</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre id="currentCsp" class="bg-light p-3 rounded"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 内联脚本测试
+    function testInlineScript() {
+        const result = document.getElementById('inlineScriptResult');
+        result.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>内联脚本执行成功！</div>';
+    }
+
+    // AJAX请求测试
+    function testAjaxRequest() {
+        const result = document.getElementById('ajaxResult');
+        result.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>正在测试AJAX请求...</div>';
+        
+        fetch('/api/admin/csrf-token')
+            .then(response => response.json())
+            .then(data => {
+                result.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>AJAX请求成功！</div>';
+            })
+            .catch(error => {
+                result.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times me-2"></i>AJAX请求失败: ' + error.message + '</div>';
+            });
+    }
+
+    // CSP违规测试
+    function testCspViolation() {
+        const result = document.getElementById('cspViolationResult');
+        try {
+            // 尝试创建内联脚本（应该被CSP阻止）
+            eval('console.log("CSP违规测试")');
+            result.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times me-2"></i>CSP未正确阻止内联脚本执行！</div>';
+        } catch (error) {
+            result.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>CSP正确阻止了违规操作！</div>';
+        }
+    }
+
+    // 显示当前CSP策略
+    function displayCurrentCsp() {
+        const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+        const csp = meta ? meta.content : '未找到CSP策略';
+        document.getElementById('currentCsp').textContent = csp;
+    }
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        displayCurrentCsp();
+    });
+</script>

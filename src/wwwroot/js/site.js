@@ -3,9 +3,12 @@
 
 // Write your JavaScript code.
 
-// 检查用户权限并显示管理菜单
+// 初始化AdminLTE和权限检查
 $(document).ready(function() {
-    // 检查用户是否已登录，只有登录后才检查管理员权限
+    // 初始化AdminLTE
+    initializeAdminLTE();
+    
+    // 检查用户权限并显示管理菜单
     if (isUserLoggedIn()) {
         checkAdminPermissions();
     } else {
@@ -13,6 +16,15 @@ $(document).ready(function() {
         hideAdminMenus();
     }
 });
+
+// 初始化AdminLTE
+function initializeAdminLTE() {
+    // 初始化侧边栏树形菜单
+    $('[data-widget="treeview"]').Treeview('init');
+    
+    // 初始化推送菜单
+    $('[data-widget="pushmenu"]').PushMenu('init');
+}
 
 // 检查用户是否已登录
 function isUserLoggedIn() {
@@ -50,7 +62,6 @@ function showAdminMenus() {
     $('#adminMenu').show();
     $('#adminSettingsMenu').show();
     $('#settingsMenu').show();
-    $('#securityMenu').show();
     $('#hangfireMenu').show();
 }
 
@@ -59,6 +70,32 @@ function hideAdminMenus() {
     $('#adminMenu').hide();
     $('#adminSettingsMenu').hide();
     $('#settingsMenu').hide();
-    $('#securityMenu').hide();
     $('#hangfireMenu').hide();
+}
+
+// 工具函数：显示Toast通知
+function showToast(message, type = 'info') {
+    // 如果存在toastr，使用toastr
+    if (typeof toastr !== 'undefined') {
+        toastr[type](message);
+    } else {
+        // 否则使用alert
+        alert(message);
+    }
+}
+
+// 工具函数：显示加载状态
+function showLoading(element, text = '加载中...') {
+    if (typeof element === 'string') {
+        element = $(element);
+    }
+    element.prop('disabled', true).html(`<i class="fas fa-spinner fa-spin"></i> ${text}`);
+}
+
+// 工具函数：隐藏加载状态
+function hideLoading(element, originalText = '确定') {
+    if (typeof element === 'string') {
+        element = $(element);
+    }
+    element.prop('disabled', false).html(originalText);
 }

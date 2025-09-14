@@ -2,19 +2,17 @@
 @model WebUI.Pages.Account.RegisterModel
 @{
     ViewData["Title"] = "用户注册";
-    Layout = "~/Pages/Shared/_Layout.cshtml";
+    Layout = "~/Pages/Shared/_LoginLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-            <div class="card shadow border-0 mt-5">
-                <div class="card-header bg-success text-white text-center py-4">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-plus me-2"></i>用户注册
-                    </h4>
-                </div>
-                <div class="card-body p-4">
+<div class="login-card">
+    <div class="login-header">
+        <h4>
+            <i class="fas fa-key me-2"></i>账号资源管理系统
+        </h4>
+        <p class="mb-0 mt-2">用户注册</p>
+    </div>
+    <div class="login-body">
                     <form id="registerForm" method="post">
                         <div asp-validation-summary="All" class="text-danger mb-3"></div>
                         
@@ -85,10 +83,7 @@
                         <a asp-page="./Login" class="btn btn-outline-primary">
                             <i class="fas fa-sign-in-alt me-2"></i>立即登录
                         </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+                    }
     </div>
 </div>
 

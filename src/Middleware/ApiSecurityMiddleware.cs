@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
+using WebUI.Models;
 
 namespace WebUI.Middleware;
 
@@ -12,12 +14,14 @@ public class ApiSecurityMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ApiSecurityMiddleware> _logger;
     private readonly IConfiguration _configuration;
+    private readonly SecurityOptions _securityOptions;
 
-    public ApiSecurityMiddleware(RequestDelegate next, ILogger<ApiSecurityMiddleware> logger, IConfiguration configuration)
+    public ApiSecurityMiddleware(RequestDelegate next, ILogger<ApiSecurityMiddleware> logger, IConfiguration configuration, IOptions<SecurityOptions> securityOptions)
     {
         _next = next;
         _logger = logger;
         _configuration = configuration;
+        _securityOptions = securityOptions.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -56,30 +60,9 @@ public class ApiSecurityMiddleware
         // XSS保护
         response.Headers["X-XSS-Protection"] = "1; mode=block";
 
-        // 内容安全策略 - 修复资源加载问题
-        var csp = "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
-            "img-src 'self' data: https:; " +
-            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://at.alicdn.com; " +
-            "connect-src 'self' wss: ws: http://localhost:*; " + // 允许开发环境的Browser Link
-            "frame-ancestors 'none'; " +
-            "base-uri 'self'; " +
-            "form-action 'self'";
-        
-        // 在开发环境中放宽CSP限制
-        if (context.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
-        {
-            csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
-                "style-src 'self' 'unsafe-inline' https:; " +
-                "img-src 'self' data: https:; " +
-                "font-src 'self' data: https:; " +
-                "connect-src 'self' wss: ws: http: https:; " +
-                "frame-ancestors 'none'; " +
-                "base-uri 'self'; " +
-                "form-action 'self'";
-        }
+        // 内容安全策略 - 从配置文件读取
+        var cspOptions = GetCspOptions(context);
+        var csp = cspOptions.ToCspString();
         
         response.Headers["Content-Security-Policy"] = csp;
 
@@ -102,6 +85,23 @@ public class ApiSecurityMiddleware
             "magnetometer=(), " +
             "gyroscope=(), " +
             "speaker=()";
+    }
+
+    /// <summary>
+    /// 获取CSP配置选项
+    /// </summary>
+    /// <param name="context">HTTP上下文</param>
+    /// <returns>CSP配置选项</returns>
+    private ContentSecurityPolicyOptions GetCspOptions(HttpContext context)
+    {
+        var isDevelopment = context.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true;
+        
+        if (isDevelopment)
+        {
+            return _securityOptions.Development.ContentSecurityPolicy;
+        }
+        
+        return _securityOptions.ContentSecurityPolicy;
     }
 
     private async Task<bool> CheckRequestSizeLimit(HttpContext context)

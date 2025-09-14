@@ -173,6 +173,12 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 // 添加数据库初始化服务
 builder.Services.AddScoped<IDbInitializationService, DbInitializationService>();
 
+// 配置安全选项
+builder.Services.Configure<WebUI.Models.SecurityOptions>(builder.Configuration.GetSection("Security"));
+
+// 添加CSP验证服务
+builder.Services.AddScoped<ICspValidationService, CspValidationService>();
+
 // 添加SignalR
 builder.Services.AddSignalR();
 

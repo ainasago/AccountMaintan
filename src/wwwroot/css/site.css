@@ -1,31 +1,204 @@
-html {
-  font-size: 14px;
+/* AdminLTE 自定义样式 */
+
+/* 品牌Logo样式 */
+.brand-link .brand-image {
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    margin-right: 8px;
+    margin-top: -3px;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+/* 侧边栏菜单样式 */
+.nav-sidebar .nav-item > .nav-link {
+    border-radius: 0.25rem;
+    margin-bottom: 0.1rem;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.nav-sidebar .nav-item > .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+.nav-sidebar .nav-item > .nav-link.active {
+    background-color: #007bff;
+    color: #fff;
 }
 
-body {
-  margin-bottom: 60px;
+/* 内容区域样式 */
+.content-wrapper {
+    min-height: calc(100vh - 57px);
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* 卡片样式增强 */
+.card {
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.125), 0 1px 3px rgba(0, 0, 0, 0.2);
+    border: 0;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 表格样式增强 */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* 按钮样式增强 */
+.btn {
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* 徽章样式 */
+.badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* 状态徽章颜色 */
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.bg-primary {
+    background-color: #007bff !important;
+}
+
+/* 模态框样式增强 */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* 表单样式增强 */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 面包屑导航样式 */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: #6c757d;
+}
+
+/* 响应式调整 */
+@media (max-width: 767.98px) {
+    .content-wrapper {
+        margin-left: 0;
+    }
+    
+    .main-sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .main-sidebar.sidebar-open {
+        transform: translateX(0);
+    }
+}
+
+/* 加载动画 */
+.fa-spinner.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 工具提示样式 */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+/* 下拉菜单样式增强 */
+.dropdown-menu {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* 页脚样式 */
+.main-footer {
+    background-color: #fff;
+    border-top: 1px solid #dee2e6;
+    color: #6c757d;
+    padding: 1rem;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
