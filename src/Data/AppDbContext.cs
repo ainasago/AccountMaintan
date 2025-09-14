@@ -152,6 +152,32 @@ public class AppDbContext
              .WithMany(s => s.ResourceUsages)
              .HasForeignKey(sru => sru.ServerId);
         });
+
+        // 配置笔记实体
+        Fsql.CodeFirst.Entity<Note>(e =>
+        {
+            e.HasKey(n => n.Id);
+            e.Property(n => n.UserId).HasMaxLength(450).IsRequired();
+            e.Property(n => n.Title).HasMaxLength(200).IsRequired();
+            e.Property(n => n.Content).HasMaxLength(10000);
+            e.Property(n => n.Summary).HasMaxLength(500);
+            e.Property(n => n.Tags).HasMaxLength(500);
+            e.Property(n => n.Category).HasMaxLength(100);
+        });
+
+        // 配置笔记附件实体
+        Fsql.CodeFirst.Entity<NoteAttachment>(e =>
+        {
+            e.HasKey(na => na.Id);
+            e.Property(na => na.OriginalFileName).HasMaxLength(255).IsRequired();
+            e.Property(na => na.StoredFileName).HasMaxLength(255).IsRequired();
+            e.Property(na => na.FilePath).HasMaxLength(500).IsRequired();
+            e.Property(na => na.MimeType).HasMaxLength(100).IsRequired();
+            e.Property(na => na.FileHash).HasMaxLength(64);
+            e.HasOne(na => na.Note)
+             .WithMany(n => n.Attachments)
+             .HasForeignKey(na => na.NoteId);
+        });
     }
 
     public void InitializeDatabase()
@@ -166,6 +192,8 @@ public class AppDbContext
         Fsql.CodeFirst.SyncStructure<WebsiteAccount>();
         Fsql.CodeFirst.SyncStructure<WebsiteAccessLog>();
         Fsql.CodeFirst.SyncStructure<ServerResourceUsage>();
+        Fsql.CodeFirst.SyncStructure<Note>();
+        Fsql.CodeFirst.SyncStructure<NoteAttachment>();
 
         // 检查是否需要插入示例数据
         var accountCount = Fsql.Select<Account>().Count();

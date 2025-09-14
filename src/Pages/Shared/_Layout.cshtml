@@ -6,9 +6,9 @@
     <title>@ViewData["Title"] - 账号资源管理系统</title>
     
     <!-- AdminLTE CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="~/lib/admin-lte/css/adminlte.min.css">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" />
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -97,6 +97,14 @@
                             <a asp-page="/ReminderRecords/Index" class="nav-link">
                                 <i class="nav-icon fas fa-history"></i>
                                 <p>提醒历史</p>
+                            </a>
+                        </li>
+
+                        <!-- 笔记管理 -->
+                        <li class="nav-item">
+                            <a asp-page="/Notes/Index" class="nav-link">
+                                <i class="nav-icon fas fa-sticky-note"></i>
+                                <p>笔记管理</p>
                             </a>
                         </li>
 

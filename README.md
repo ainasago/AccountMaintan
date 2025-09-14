@@ -37,6 +37,13 @@
 - **数据加密**：敏感数据使用 AES 加密存储
 - **邮箱密码修改**：支持用户修改登录邮箱和密码
 
+### 🛡️ 安全防护
+- **内容安全策略(CSP)**：基于配置文件的可配置CSP策略，防止XSS攻击
+- **CSRF保护**：API请求的CSRF令牌验证，防止跨站请求伪造
+- **安全头设置**：完整的HTTP安全头配置，包括HSTS、X-Frame-Options等
+- **API安全**：请求频率限制、大小限制、访问控制
+- **CSP测试工具**：内置CSP配置测试和验证功能
+
 ### 📊 账号管理
 - **账号存储**：支持用户名、密码、网址、分类、标签等信息
 - **安全问题**：为每个账号配置多个安全问题
@@ -44,6 +51,16 @@
 - **批量操作**：支持账号的批量导入导出（CSV/Excel）
 - **搜索筛选**：支持按关键词、分类、标签搜索账号
 - **TOTP支持**：为账号生成双因素认证密钥
+
+### 📝 笔记管理
+- **富文本编辑**：基于Quill的现代化HTML编辑器
+- **多媒体支持**：支持图片、音频、视频文件上传和预览
+- **文件管理**：支持任意格式文件上传，自动分类管理
+- **剪切板集成**：支持从剪切板直接粘贴图片
+- **标签分类**：灵活的标签和分类系统
+- **搜索功能**：全文搜索笔记内容
+- **导出功能**：支持导出为HTML和Markdown格式
+- **媒体播放**：内置音频、视频播放器
 
 ### 🔔 智能提醒
 - **养号提醒**：基于Hangfire的定时任务，自动检测长期未访问的账号
@@ -64,6 +81,8 @@
 - **日志记录**：基于Serilog的完整系统日志和错误跟踪
 - **配置管理**：灵活的系统配置和参数设置
 - **Hangfire仪表板**：可视化的任务调度管理界面
+- **安全配置**：CSP策略配置、CSRF保护设置
+- **安全测试**：内置CSP测试工具和配置验证
 
 ## 🚀 快速开始
 
@@ -165,6 +184,62 @@ dotnet run --configuration Release
 2. 配置邮件、Telegram等通知渠道
 3. 自定义通知模板和发送时间
 
+### 安全功能
+
+#### CSP测试
+1. 访问"CSP测试"页面（/CspTest）
+2. 测试内联脚本、样式、外部资源加载
+3. 验证CSP策略是否正确配置
+4. 查看当前CSP策略配置
+
+#### 安全配置
+1. 访问"系统设置"页面
+2. 配置CSP策略参数
+3. 设置CSRF保护选项
+4. 查看安全头配置状态
+
+### 笔记管理
+
+#### 创建笔记
+1. 访问"笔记管理"页面
+2. 点击"新建笔记"按钮
+3. 填写笔记标题和内容
+4. 设置分类和标签
+5. 选择是否置顶或公开
+6. 保存笔记
+
+#### 编辑笔记
+1. 在笔记列表中点击"编辑"按钮
+2. 使用富文本编辑器编辑内容
+3. 支持插入图片、链接、表格等
+4. 实时预览编辑效果
+5. 保存修改
+
+#### 文件上传
+1. 在编辑笔记时点击"上传文件"按钮
+2. 支持拖拽上传或点击选择文件
+3. 支持图片、音频、视频、文档等格式
+4. 自动生成缩略图和预览
+5. 支持从剪切板直接粘贴图片
+
+#### 媒体播放
+1. 上传的音频文件可在线播放
+2. 视频文件支持多种格式播放
+3. 图片支持缩放和预览
+4. 文档支持在线查看
+
+#### 搜索和筛选
+1. 使用搜索框按关键词搜索
+2. 按分类筛选笔记
+3. 按标签筛选笔记
+4. 支持全文搜索内容
+
+#### 导出功能
+1. 支持导出为HTML格式
+2. 支持导出为Markdown格式
+3. 保持原始格式和样式
+4. 包含附件信息
+
 ### 数据管理
 
 #### 导入导出
@@ -200,6 +275,9 @@ dotnet run --configuration Release
 - **任务调度**：Hangfire 1.8.21 + Quartz 3.8.1
 - **日志**：Serilog + File/Console Sinks
 - **加密**：AES + System.Security.Cryptography
+- **安全**：CSP + CSRF + 安全头中间件
+- **富文本编辑**：Quill.js
+- **文件处理**：ImageSharp + 自定义文件上传
 - **通知**：Gmail API + MimeKit + SignalR
 - **文档处理**：ClosedXML (Excel)
 
@@ -227,7 +305,9 @@ AccountMaintan/
 │   │   ├── RemindersController.cs  # 提醒管理API
 │   │   ├── ReminderRecordsController.cs # 提醒记录API
 │   │   ├── SettingsController.cs   # 系统设置API
-│   │   └── HangfireSettingsController.cs # Hangfire设置API
+│   │   ├── HangfireSettingsController.cs # Hangfire设置API
+│   │   ├── CspController.cs        # CSP管理API
+│   │   └── NotesController.cs      # 笔记管理API
 │   ├── Data/                       # 数据访问层
 │   │   ├── AppDbContext.cs         # 应用数据库上下文
 │   │   └── IdentityDbContext.cs    # 身份认证数据库上下文
@@ -238,7 +318,10 @@ AccountMaintan/
 │   │   ├── SecurityQuestion.cs     # 安全问题实体
 │   │   ├── ReminderRecord.cs       # 提醒记录实体
 │   │   ├── NotificationSettings.cs # 通知设置
-│   │   └── HangfireSettings.cs     # Hangfire设置
+│   │   ├── HangfireSettings.cs     # Hangfire设置
+│   │   ├── SecurityOptions.cs      # 安全配置选项
+│   │   ├── Note.cs                 # 笔记实体
+│   │   └── NoteAttachment.cs       # 笔记附件实体
 │   ├── Pages/                      # Razor页面
 │   │   ├── Account/                # 用户认证页面
 │   │   │   ├── Login.cshtml        # 登录页面
@@ -255,7 +338,10 @@ AccountMaintan/
 │   │   ├── ReminderRecords/        # 提醒记录页面
 │   │   ├── Settings/               # 系统设置页面
 │   │   ├── Security/               # 安全设置页面
-│   │   └── HangfireSettings/       # Hangfire设置页面
+│   │   ├── HangfireSettings/       # Hangfire设置页面
+│   │   ├── Notes/                  # 笔记管理页面
+│   │   │   └── Index.cshtml        # 笔记列表页面
+│   │   └── CspTest.cshtml          # CSP测试页面
 │   ├── Services/                   # 业务服务层
 │   │   ├── AccountService.cs       # 账号业务逻辑
 │   │   ├── EncryptionService.cs    # 加密服务
@@ -264,6 +350,9 @@ AccountMaintan/
 │   │   ├── ReminderSchedulerService.cs # 提醒调度服务
 │   │   ├── ReminderRecordService.cs # 提醒记录服务
 │   │   ├── NotificationSettingsService.cs # 通知设置服务
+│   │   ├── CspValidationService.cs # CSP验证服务
+│   │   ├── NoteService.cs          # 笔记业务逻辑
+│   │   ├── FileUploadService.cs    # 文件上传服务
 │   │   └── DbInitializationService.cs # 数据库初始化服务
 │   ├── Hubs/                       # SignalR集线器
 │   │   └── ReminderHub.cs          # 实时通知
@@ -272,6 +361,9 @@ AccountMaintan/
 │   ├── Extensions/                 # 扩展方法
 │   │   ├── HangfireExtensions.cs   # Hangfire扩展
 │   │   └── QuartzExtensions.cs     # Quartz扩展
+│   ├── Middleware/                 # 中间件
+│   │   ├── ApiSecurityMiddleware.cs # API安全中间件
+│   │   └── CsrfProtectionMiddleware.cs # CSRF保护中间件
 │   ├── Filters/                    # 过滤器
 │   │   └── HangfireAuthorizationFilter.cs # Hangfire授权过滤器
 │   ├── wwwroot/                    # 静态资源
@@ -363,6 +455,15 @@ ENTRYPOINT ["dotnet", "WebUI.dll"]
 - ✅ 多通道通知（邮件、Telegram、SignalR）
 - ✅ 数据导入导出（CSV/Excel）
 - ✅ 安全加密存储（AES加密）
+- ✅ 内容安全策略(CSP)保护
+- ✅ CSRF跨站请求伪造防护
+- ✅ 完整的安全头配置
+- ✅ CSP测试和验证工具
+- ✅ 富文本笔记管理功能
+- ✅ 多媒体文件上传和播放
+- ✅ 剪切板图片粘贴功能
+- ✅ 笔记搜索和分类管理
+- ✅ HTML/Markdown导出功能
 - ✅ 提醒记录和统计功能
 - ✅ Hangfire任务调度仪表板
 - ✅ 现代化响应式界面
@@ -384,6 +485,8 @@ ENTRYPOINT ["dotnet", "WebUI.dll"]
 - [Font Awesome](https://github.com/FortAwesome/Font-Awesome) - 图标库
 - [SignalR](https://github.com/dotnet/aspnetcore) - 实时通信
 - [ClosedXML](https://github.com/ClosedXML/ClosedXML) - Excel处理
+- [System.Security.Cryptography](https://github.com/dotnet/runtime) - 加密算法
+- [Microsoft.AspNetCore.Antiforgery](https://github.com/dotnet/aspnetcore) - CSRF防护
 
 ## 📞 联系我们
 

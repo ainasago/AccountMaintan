@@ -179,6 +179,12 @@ builder.Services.Configure<WebUI.Models.SecurityOptions>(builder.Configuration.G
 // 添加CSP验证服务
 builder.Services.AddScoped<ICspValidationService, CspValidationService>();
 
+// 添加笔记服务
+builder.Services.AddScoped<INoteService, NoteService>();
+
+// 添加文件上传服务
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
 // 添加SignalR
 builder.Services.AddSignalR();
 

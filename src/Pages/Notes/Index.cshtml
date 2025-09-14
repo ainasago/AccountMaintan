@@ -1,0 +1,1526 @@
+@page
+@model WebUI.Pages.Notes.IndexModel
+@{
+    ViewData["Title"] = "笔记管理";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">
+                            <i class="fas fa-sticky-note me-2"></i>笔记管理
+                        </h3>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="createNote()">
+                                <i class="fas fa-plus me-1"></i>新建笔记
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleSearch()">
+                                <i class="fas fa-search me-1"></i>搜索
+                            </button>
+                        </div>
+                        <div class="btn-group ml-2">
+                            <button class="btn btn-outline-secondary" id="cardViewBtn" onclick="switchView('card')" title="卡片视图">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" id="listViewBtn" onclick="switchView('list')" title="列表视图">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 搜索和筛选区域 -->
+                    <div id="searchPanel" class="row mb-3" style="display: none;">
+                        <div class="col-md-4">
+                            <input type="text" id="searchInput" class="form-control" placeholder="搜索笔记标题、内容...">
+                        </div>
+                        <div class="col-md-3">
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">所有分类</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="tagFilter" class="form-select">
+                                <option value="">所有标签</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-primary w-100" onclick="searchNotes()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 笔记列表 -->
+                    <div id="notesList" class="row">
+                        <!-- 笔记卡片将通过JavaScript动态加载 -->
+                    </div>
+                    
+                    <!-- 列表视图 -->
+                    <div id="notesTable" class="table-responsive" style="display: none;">
+                        <!-- 批量操作工具栏 -->
+                        <div id="batchToolbar" class="mb-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <span class="mr-3">
+                                    <strong>已选择 <span id="selectedCount">0</span> 项</strong>
+                                </span>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="batchExport('html')">
+                                        <i class="fas fa-download me-1"></i>导出HTML
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="batchExport('markdown')">
+                                        <i class="fas fa-download me-1"></i>导出Markdown
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="batchDelete()">
+                                        <i class="fas fa-trash me-1"></i>批量删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="5%">
+                                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                    </th>
+                                    <th width="5%">
+                                        <i class="fas fa-thumbtack" title="置顶"></i>
+                                    </th>
+                                    <th width="30%">标题</th>
+                                    <th width="20%">分类</th>
+                                    <th width="15%">标签</th>
+                                    <th width="10%">附件</th>
+                                    <th width="10%">更新时间</th>
+                                    <th width="5%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notesTableBody">
+                                <!-- 笔记行将在这里动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <nav id="pagination" class="mt-3">
+                        <!-- 分页控件将通过JavaScript动态生成 -->
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 笔记编辑模态框 -->
+<div class="modal fade" id="noteModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="noteModalTitle">新建笔记</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="noteTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" id="details-tab" data-toggle="tab" href="#detailsTab" role="tab">编辑</a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="attachments-tab" data-toggle="tab" href="#attachmentsTab" role="tab">附件</a>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="detailsTab" role="tabpanel" aria-labelledby="details-tab">
+                        <form id="noteForm">
+                            <input type="hidden" id="noteId" />
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label for="noteTitle" class="form-label">标题 *</label>
+                                        <input type="text" class="form-control" id="noteTitle" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="noteCategory" class="form-label">分类</label>
+                                        <input type="text" class="form-control" id="noteCategory" list="categoryList">
+                                        <datalist id="categoryList"></datalist>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="noteTags" class="form-label">标签（用逗号分隔）</label>
+                                <input type="text" class="form-control" id="noteTags" placeholder="工作,重要,学习">
+                            </div>
+                            <div class="mb-3">
+                                <label for="noteContent" class="form-label">内容</label>
+                                <div id="noteEditor" style="height: 400px;"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notePinned">
+                                        <label class="form-check-label" for="notePinned">置顶</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notePublic">
+                                        <label class="form-check-label" for="notePublic">公开</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="tab-pane fade" id="attachmentsTab" role="tabpanel" aria-labelledby="attachments-tab">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted"></i>
+                                <p class="mt-2">拖拽文件到此处或点击选择文件</p>
+                                <input type="file" id="fileInput" multiple style="display: none;">
+                                <button class="btn btn-outline-primary" id="chooseFileBtn" type="button">选择文件</button>
+                            </div>
+                        </div>
+                        <div id="uploadProgress" class="mt-3" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">上传中...</small>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="btn-group btn-group-sm" id="attachTypeFilter">
+                                <button type="button" class="btn btn-outline-secondary active" data-type="all">全部</button>
+                                <button type="button" class="btn btn-outline-secondary" data-type="image">图片</button>
+                                <button type="button" class="btn btn-outline-secondary" data-type="audio">音频</button>
+                                <button type="button" class="btn btn-outline-secondary" data-type="video">视频</button>
+                                <button type="button" class="btn btn-outline-secondary" data-type="document">文档</button>
+                                <button type="button" class="btn btn-outline-secondary" data-type="other">其他</button>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="refreshAttachments()"><i class="fas fa-rotate-right"></i> 刷新</button>
+                            </div>
+                        </div>
+                        <div id="attachmentsGrid" class="row mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" onclick="$('#noteTab a[href=\'#attachmentsTab\']').tab('show')">附件</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveNote()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件上传模态框 -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">上传文件</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-muted"></i>
+                        <p class="mt-2">拖拽文件到此处或点击选择文件</p>
+                        <input type="file" id="fileInput" multiple accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt" style="display: none;">
+                        <button class="btn btn-outline-primary" id="chooseFileBtn" type="button">
+                            选择文件
+                        </button>
+                    </div>
+                </div>
+                <div id="uploadProgress" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">上传中...</small>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="btn-group btn-group-sm" id="attachTypeFilter">
+                        <button class="btn btn-outline-secondary active" data-type="all">全部</button>
+                        <button class="btn btn-outline-secondary" data-type="image">图片</button>
+                        <button class="btn btn-outline-secondary" data-type="audio">音频</button>
+                        <button class="btn btn-outline-secondary" data-type="video">视频</button>
+                        <button class="btn btn-outline-secondary" data-type="document">文档</button>
+                        <button class="btn btn-outline-secondary" data-type="other">其他</button>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="refreshAttachments()"><i class="fas fa-rotate-right"></i> 刷新</button>
+                    </div>
+                </div>
+                <div id="attachmentsGrid" class="row mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/quill/js/quill.min.js"></script>
+    <link href="~/lib/quill/css/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
+    
+    <script>
+        let quill;
+        let quillInitialized = false;
+        let currentPage = 1;
+        let currentSearch = '';
+        let currentCategory = '';
+        let currentTag = '';
+        let currentNoteId = null;
+        let csrfToken = '';
+        let uploadSetupInitialized = false;
+        let attachmentViewer = null;
+
+        // 初始化
+        $(document).ready(function() {
+            initializeCsrfToken();
+            initializeEditor();
+            loadNotes();
+            loadCategories();
+            loadTags();
+            // 注意：上传事件在打开上传窗口时再绑定，避免重复绑定和意外触发
+            // 附件类型筛选事件
+            $(document).on('click', '#attachTypeFilter button', function(e){
+                e.preventDefault();
+                $('#attachTypeFilter button').removeClass('active');
+                $(this).addClass('active');
+                const type = $(this).data('type') || 'all';
+                if (typeof renderAttachmentsGrid === 'function') {
+                    renderAttachmentsGrid(type);
+                }
+            });
+
+            // 切换到附件Tab时，初始化上传与加载附件、初始化图片预览
+            $(document).on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+                const target = $(e.target).attr('href');
+                if (target === '#attachmentsTab') {
+                    if (!uploadSetupInitialized) {
+                        setupFileUpload();
+                        uploadSetupInitialized = true;
+                    }
+                    refreshAttachments();
+                    initAttachmentViewer();
+                }
+            });
+        });
+
+        // 初始化CSRF令牌
+        async function initializeCsrfToken() {
+            try {
+                console.log('正在获取CSRF令牌...');
+                const response = await fetch('/api/admin/csrf-token', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        csrfToken = data.token;
+                        console.log('CSRF令牌已获取:', csrfToken.substring(0, 8) + '...');
+                    } else {
+                        console.error('CSRF令牌获取失败:', data.message);
+                    }
+                } else {
+                    console.error('CSRF令牌请求失败:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('获取CSRF令牌失败:', error);
+            }
+        }
+
+        // 获取CSRF令牌（如果不存在则重新获取）
+        async function getCsrfToken() {
+            if (!csrfToken) {
+                await initializeCsrfToken();
+            }
+            return csrfToken;
+        }
+
+        // 初始化富文本编辑器
+        function initializeEditor() {
+            // 如果已经初始化过，直接返回
+            if (quillInitialized) {
+                return;
+            }
+            
+            // 如果编辑器已经存在，先销毁
+            if (quill) {
+                quill = null;
+            }
+            
+            // 清空编辑器容器
+            const editorContainer = document.getElementById('noteEditor');
+            if (editorContainer) {
+                editorContainer.innerHTML = '';
+            }
+            
+            // 创建新的编辑器实例
+            quill = new Quill('#noteEditor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'indent': '-1'}, { 'indent': '+1' }],
+                        ['link', 'image', 'video'],
+                        ['blockquote', 'code-block'],
+                        [{ 'align': [] }],
+                        ['clean']
+                    ]
+                }
+            });
+            
+            // 标记为已初始化
+            quillInitialized = true;
+        }
+
+        // 加载笔记列表
+        async function loadNotes(page = 1) {
+            currentPage = page;
+            
+            const params = new URLSearchParams({
+                page: page,
+                pageSize: 12,
+                search: currentSearch,
+                category: currentCategory,
+                tag: currentTag
+            });
+
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch(`/api/notes?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': token
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        renderNotes(data.data);
+                        renderPagination(data.pagination);
+                    }
+                } else {
+                    showAlert('加载笔记失败', 'danger');
+                }
+            } catch (error) {
+                console.error('加载笔记失败:', error);
+                showAlert('加载笔记失败', 'danger');
+            }
+        }
+
+        // 当前视图模式
+        let currentView = 'card';
+
+        // 切换视图模式
+        function switchView(view) {
+            currentView = view;
+            
+            if (view === 'card') {
+                $('#notesList').show();
+                $('#notesTable').hide();
+                $('#cardViewBtn').addClass('active');
+                $('#listViewBtn').removeClass('active');
+            } else {
+                $('#notesList').hide();
+                $('#notesTable').show();
+                $('#cardViewBtn').removeClass('active');
+                $('#listViewBtn').addClass('active');
+            }
+            
+            // 重新渲染当前数据
+            if (window.currentNotes) {
+                renderNotes(window.currentNotes);
+            }
+        }
+
+        // 渲染笔记列表
+        function renderNotes(notes) {
+            // 保存当前数据
+            window.currentNotes = notes;
+            
+            if (currentView === 'card') {
+                renderCardView(notes);
+            } else {
+                renderListView(notes);
+            }
+        }
+
+        // 渲染卡片视图
+        function renderCardView(notes) {
+            const container = $('#notesList');
+            container.empty();
+
+            if (notes.length === 0) {
+                container.html(`
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-sticky-note fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">暂无笔记</p>
+                        <button class="btn btn-primary" onclick="createNote()">创建第一篇笔记</button>
+                    </div>
+                `);
+                return;
+            }
+
+            notes.forEach(note => {
+                const noteCard = createNoteCard(note);
+                container.append(noteCard);
+            });
+        }
+
+        // 渲染列表视图
+        function renderListView(notes) {
+            const tbody = $('#notesTableBody');
+            tbody.empty();
+
+            if (notes.length === 0) {
+                tbody.html(`
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-sticky-note fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无笔记</p>
+                            <button class="btn btn-primary" onclick="createNote()">创建第一篇笔记</button>
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+
+            notes.forEach(note => {
+                const noteRow = createNoteRow(note);
+                tbody.append(noteRow);
+            });
+        }
+
+        // 创建笔记行（列表视图）
+        function createNoteRow(note) {
+            const noteId = note.id || note.Id || 0;
+            const summary = note.summary || note.content.replace(/<[^>]*>/g, '').substring(0, 50) + '...';
+            const tags = note.tags ? note.tags.split(',').map(tag => tag.trim()) : [];
+            const hasAttachments = note.attachments && note.attachments.length > 0;
+            const updateDate = new Date(note.updatedAt).toLocaleDateString();
+
+            return $(`
+                <tr data-note-id="${noteId}" onclick="editNote(${noteId})" style="cursor: pointer;">
+                    <td onclick="event.stopPropagation()">
+                        <input type="checkbox" class="note-checkbox" value="${noteId}" onchange="updateSelectAllState()">
+                    </td>
+                    <td>
+                        ${note.isPinned ? '<i class="fas fa-thumbtack text-warning"></i>' : ''}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <strong>${note.title}</strong>
+                            ${note.isPublic ? '<span class="badge badge-info ml-2">公开</span>' : ''}
+                        </div>
+                        <small class="text-muted">${summary}</small>
+                    </td>
+                    <td>
+                        ${note.category ? `<span class="badge badge-secondary">${note.category}</span>` : '-'}
+                    </td>
+                    <td>
+                        ${tags.length > 0 ? tags.map(tag => `<span class="badge badge-light mr-1">${tag}</span>`).join('') : '-'}
+                    </td>
+                    <td>
+                        ${hasAttachments ? `<i class="fas fa-paperclip text-success"></i> ${note.attachments.length}` : '-'}
+                    </td>
+                    <td>
+                        <small class="text-muted">${updateDate}</small>
+                    </td>
+                    <td onclick="event.stopPropagation()">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="showActionMenu(${noteId}, event)">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        }
+
+        // 创建笔记卡片
+        function createNoteCard(note) {
+            const noteId = note.id || note.Id || 0;
+            const summary = note.summary || note.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...';
+            const tags = note.tags ? note.tags.split(',').map(tag => tag.trim()) : [];
+            const hasAttachments = note.attachments && note.attachments.length > 0;
+
+            return $(`
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 note-card" data-note-id="${noteId}" onclick="editNote(${noteId})" style="cursor: pointer;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="card-title mb-0">${note.title}</h6>
+                            <div onclick="event.stopPropagation()">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="showActionMenu(${noteId}, event)">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small">${summary}</p>
+                            ${tags.length > 0 ? `
+                                <div class="mb-2">
+                                    ${tags.map(tag => `<span class="badge bg-secondary me-1">${tag}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            ${note.category ? `<small class="text-info"><i class="fas fa-folder me-1"></i>${note.category}</small>` : ''}
+                            ${hasAttachments ? `<small class="text-success ms-2"><i class="fas fa-paperclip me-1"></i>${note.attachments.length}个附件</small>` : ''}
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                ${new Date(note.updatedAt).toLocaleDateString()}
+                                ${note.isPinned ? '<i class="fas fa-thumbtack ms-2 text-warning"></i>' : ''}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `);
+        }
+
+        // 渲染分页
+        function renderPagination(pagination) {
+            const container = $('#pagination');
+            container.empty();
+
+            if (pagination.totalPages <= 1) return;
+
+            let paginationHtml = '<ul class="pagination justify-content-center">';
+
+            // 上一页
+            if (pagination.page > 1) {
+                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="loadNotes(${pagination.page - 1})">上一页</a></li>`;
+            }
+
+            // 页码
+            const startPage = Math.max(1, pagination.page - 2);
+            const endPage = Math.min(pagination.totalPages, pagination.page + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === pagination.page ? 'active' : '';
+                paginationHtml += `<li class="page-item ${activeClass}"><a class="page-link" href="#" onclick="loadNotes(${i})">${i}</a></li>`;
+            }
+
+            // 下一页
+            if (pagination.page < pagination.totalPages) {
+                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="loadNotes(${pagination.page + 1})">下一页</a></li>`;
+            }
+
+            paginationHtml += '</ul>';
+            container.html(paginationHtml);
+        }
+
+        // 加载分类列表
+        async function loadCategories() {
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch('/api/notes/categories', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': token
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const select = $('#categoryFilter');
+                        const datalist = $('#categoryList');
+                        
+                        select.empty().append('<option value="">所有分类</option>');
+                        datalist.empty();
+                        
+                        data.data.forEach(category => {
+                            select.append(`<option value="${category}">${category}</option>`);
+                            datalist.append(`<option value="${category}">`);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('加载分类失败:', error);
+            }
+        }
+
+        // 加载标签列表
+        async function loadTags() {
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch('/api/notes/tags', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': token
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const select = $('#tagFilter');
+                        select.empty().append('<option value="">所有标签</option>');
+                        
+                        data.data.forEach(tag => {
+                            select.append(`<option value="${tag}">${tag}</option>`);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('加载标签失败:', error);
+            }
+        }
+
+        // 搜索笔记
+        function searchNotes() {
+            currentSearch = $('#searchInput').val();
+            currentCategory = $('#categoryFilter').val();
+            currentTag = $('#tagFilter').val();
+            loadNotes(1);
+        }
+
+        // 切换搜索面板
+        function toggleSearch() {
+            $('#searchPanel').toggle();
+        }
+
+        // 创建笔记
+        function createNote() {
+            currentNoteId = null;
+            $('#noteModalTitle').text('新建笔记');
+            $('#noteForm')[0].reset();
+            quill.setContents([]);
+            $('#noteModal').modal('show');
+        }
+
+        // 编辑笔记
+        async function editNote(id) {
+            if (!id || id === 0) {
+                console.warn('收到无效的笔记ID:', id);
+                return;
+            }
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch(`/api/notes/${id}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRF-TOKEN': token
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const note = data.data;
+                        const noteId = note.id || note.Id || id;
+                        currentNoteId = noteId;
+                        $('#noteModalTitle').text('编辑笔记');
+                        $('#noteId').val(note.id);
+                        $('#noteTitle').val(note.title);
+                        $('#noteCategory').val(note.category || '');
+                        $('#noteTags').val(note.tags || '');
+                        $('#notePinned').prop('checked', note.isPinned);
+                        $('#notePublic').prop('checked', note.isPublic);
+                        
+                        // 设置编辑器内容
+                        quill.setContents(quill.clipboard.convert(note.content));
+                        
+                        // 加载附件
+                        await loadAttachments(noteId);
+
+                        $('#noteModal').modal('show');
+                    }
+                } else {
+                    showAlert('加载笔记失败', 'danger');
+                }
+            } catch (error) {
+                console.error('加载笔记失败:', error);
+                showAlert('加载笔记失败', 'danger');
+            }
+        }
+
+        // 加载附件列表
+        async function loadAttachments(noteId) {
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch(`/api/notes/${noteId}/attachments`, {
+                    method: 'GET',
+                    headers: { 'X-CSRF-TOKEN': token },
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        $('#uploadedFiles').empty();
+                        renderUploadedFiles(data.data);
+                    }
+                }
+            } catch (e) {
+                console.error('加载附件失败', e);
+            }
+        }
+
+        // 保存笔记
+        async function saveNote() {
+            const title = $('#noteTitle').val().trim();
+            if (!title) {
+                showAlert('请输入笔记标题', 'warning');
+                return;
+            }
+
+            const content = quill.root.innerHTML;
+            const noteData = {
+                Title: title,
+                Content: content,
+                Category: $('#noteCategory').val(),
+                Tags: $('#noteTags').val(),
+                IsPinned: $('#notePinned').is(':checked'),
+                IsPublic: $('#notePublic').is(':checked')
+            };
+
+            const url = currentNoteId ? `/api/notes/${currentNoteId}` : '/api/notes';
+            const method = currentNoteId ? 'PUT' : 'POST';
+
+            console.log('保存笔记:', {
+                currentNoteId: currentNoteId,
+                url: url,
+                method: method,
+                noteData: noteData
+            });
+
+            try {
+                const token = await getCsrfToken();
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(noteData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        $('#noteModal').modal('hide');
+                        loadNotes(currentPage);
+                    }
+                } else {
+                    showAlert('保存笔记失败', 'danger');
+                }
+            } catch (error) {
+                console.error('保存笔记失败:', error);
+                showAlert('保存笔记失败', 'danger');
+            }
+        }
+
+        // 删除笔记
+        async function deleteNote(id) {
+            if (confirm('确定要删除这篇笔记吗？')) {
+                try {
+                    const token = await getCsrfToken();
+                    const response = await fetch(`/api/notes/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': token
+                        },
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            showAlert(data.message, 'success');
+                            loadNotes(currentPage);
+                        }
+                    } else {
+                        showAlert('删除笔记失败', 'danger');
+                    }
+                } catch (error) {
+                    console.error('删除笔记失败:', error);
+                    showAlert('删除笔记失败', 'danger');
+                }
+            }
+        }
+
+        // 导出笔记
+        function exportNote(id, format) {
+            const url = `/api/notes/${id}/export/${format}`;
+            window.open(url, '_blank');
+        }
+
+        // 设置文件上传
+        function setupFileUpload() {
+            const uploadArea = $('#uploadArea');
+            const fileInput = $('#fileInput');
+
+            // 拖拽上传
+            uploadArea.on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            });
+
+            uploadArea.on('dragleave', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            });
+
+            uploadArea.on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+                const files = e.originalEvent.dataTransfer.files;
+                handleFileUpload(files);
+            });
+
+            // 点击上传：容器点击触发选择
+            uploadArea.on('click', function(e) {
+                // 仅在点击容器空白区域时触发
+                if (e.target.id !== 'uploadArea') return;
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.trigger('click');
+            });
+
+            // 阻止 input 冒泡到容器
+            fileInput.on('click', function(e){
+                e.stopPropagation();
+            });
+
+            // 单独的按钮触发选择
+            $('#chooseFileBtn').on('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.trigger('click');
+            });
+
+            fileInput.on('change', function() {
+                handleFileUpload(this.files);
+                // 选完文件后清空 value，防止再次选择同一文件不触发 change
+                this.value = '';
+            });
+        }
+
+        // 打开附件上传模态框
+        function openUploadModal() {
+            if (!currentNoteId || currentNoteId === 0) {
+                showAlert('请先保存当前笔记，再上传附件', 'warning');
+                return;
+            }
+            if (!uploadSetupInitialized) {
+                setupFileUpload();
+                uploadSetupInitialized = true;
+            }
+            // 打开前刷新当前笔记附件
+            if (typeof refreshAttachments === 'function') {
+                refreshAttachments();
+            }
+            $('#uploadModal').modal('show');
+        }
+
+        // 刷新当前笔记附件列表
+        function refreshAttachments() {
+            if (!currentNoteId || currentNoteId === 0) {
+                return;
+            }
+            return loadAttachments(currentNoteId);
+        }
+
+        // 处理文件上传
+        async function handleFileUpload(files) {
+            if (!currentNoteId) {
+                showAlert('请先创建或编辑笔记', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            Array.from(files).forEach(file => {
+                formData.append('files', file);
+            });
+
+            $('#uploadProgress').show();
+            $('#uploadedFiles').empty();
+
+            try {
+                const token = await getCsrfToken();
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        $('.progress-bar').css('width', percentComplete + '%');
+                    }
+                });
+
+                xhr.addEventListener('load', function() {
+                    $('#uploadProgress').hide();
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            showAlert(response.message, 'success');
+                            // 合并新附件到缓存并刷新当前过滤视图
+                            window.currentAttachments = (window.currentAttachments || []).concat(response.data || []);
+                            const activeType = $('#attachTypeFilter .active').data('type') || 'all';
+                            if (typeof renderAttachmentsGrid === 'function') {
+                                renderAttachmentsGrid(activeType);
+                            }
+                        } else {
+                            showAlert('文件上传失败', 'danger');
+                        }
+                    } else {
+                        showAlert('文件上传失败', 'danger');
+                    }
+                });
+
+                xhr.addEventListener('error', function() {
+                    $('#uploadProgress').hide();
+                    showAlert('文件上传失败', 'danger');
+                });
+                // 使用相对路径且禁用默认表单提交，纯XHR，避免刷新
+                xhr.open('POST', `/api/notes/${currentNoteId}/attachments/batch`, true);
+                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                xhr.send(formData);
+            } catch (error) {
+                console.error('文件上传失败:', error);
+                $('#uploadProgress').hide();
+                showAlert('文件上传失败', 'danger');
+            }
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (!bytes || isNaN(bytes)) return '0 B';
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let i = 0;
+            let num = Number(bytes);
+            while (num >= 1024 && i < sizes.length - 1) {
+                num /= 1024;
+                i++;
+            }
+            return num.toFixed(num >= 10 || i === 0 ? 0 : 2) + ' ' + sizes[i];
+        }
+
+        // 渲染已上传文件（缓存并绘制网格）
+        function renderUploadedFiles(attachments) {
+            window.currentAttachments = attachments || [];
+            renderAttachmentsGrid($('#attachTypeFilter .active').data('type') || 'all');
+        }
+
+        // 根据过滤类型渲染网格
+        function renderAttachmentsGrid(filterType) {
+            const grid = $('#attachmentsGrid');
+            grid.empty();
+            const items = (window.currentAttachments || []).filter(att => {
+                if (filterType === 'all') return true;
+                const type = (att.fileType || att.FileType || 0);
+                const typeMap = { image: 1, audio: 2, video: 3, document: 4, other: 5 };
+                return type === typeMap[filterType];
+            });
+
+            if (items.length === 0) {
+                grid.html('<div class="col-12 text-center text-muted py-4">暂无附件</div>');
+                return;
+            }
+
+            items.forEach(att => {
+                const id = att.id || att.Id;
+                const name = att.originalFileName || att.OriginalFileName || '未命名';
+                const size = att.fileSize || att.FileSize || 0;
+                const type = (att.fileType || att.FileType || 0);
+
+                let preview = '<i class="fas fa-file fa-2x text-secondary"></i>';
+                if (type === 1) {
+                    // 图片缩略图
+                    preview = `<img src="/api/notes/attachments/${id}/thumbnail?width=800&height=600" class="img-fluid rounded" alt="${name}"/>`;
+                } else if (type === 2) {
+                    preview = '<i class="fas fa-music fa-2x text-info"></i>';
+                } else if (type === 3) {
+                    preview = '<i class="fas fa-video fa-2x text-warning"></i>';
+                } else if (type === 4) {
+                    preview = '<i class="fas fa-file-lines fa-2x text-primary"></i>';
+                }
+
+                const isTextLike = (type !== 1 && type !== 2 && type !== 3);
+
+                const card = $(`
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3" data-attachment-id="${id}">
+                        <div class="card h-100">
+                            <div class="card-body d-flex flex-column align-items-center justify-content-center" style="min-height: 160px; overflow:hidden;">
+                                ${preview}
+                            </div>
+                            <div class="card-footer d-flex justify-content-between align-items-center">
+                                <div class="text-truncate" title="${name}">${name}</div>
+                                <small class="text-muted">${formatFileSize(size)}</small>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between">
+                                <a class="btn btn-sm btn-outline-primary" href="/api/notes/attachments/${id}/download" title="下载"><i class="fas fa-download"></i></a>
+                                <div class="btn-group">
+                                    ${isTextLike?`<button class="btn btn-sm btn-outline-secondary" onclick="openTextEditor(${id}, '${name.replace(/'/g, "&#39;")}')" title="以文本方式编辑"><i class="fas fa-pen"></i></button>`:''}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAttachment(${id})" title="删除"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                grid.append(card);
+            });
+
+            // 渲染后更新图片预览器
+            initAttachmentViewer(true);
+        }
+
+        function initAttachmentViewer(updateOnly = false) {
+            const gridEl = document.getElementById('attachmentsGrid');
+            if (!gridEl) return;
+            if (attachmentViewer) {
+                try { attachmentViewer.update(); } catch {}
+                return;
+            }
+            try {
+                attachmentViewer = new Viewer(gridEl, {
+                    navbar: false,
+                    toolbar: true,
+                    title: false,
+                    movable: true,
+                    zoomable: true,
+                    rotatable: true,
+                    scalable: true,
+                    fullscreen: true,
+                    toggleOnDblclick: true,
+                });
+            } catch {}
+        }
+
+        // 打开文本编辑器
+        function openTextEditor(attachmentId, filename) {
+            const grid = $('#attachmentsGrid');
+            const editorId = 'textEditor_' + attachmentId;
+            const panel = $(`
+                <div class="col-12 mb-3" id="${editorId}_wrapper">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong><i class="fas fa-file-lines me-2"></i>${filename}</strong>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-success" onclick="saveTextAttachment(${attachmentId}, '${editorId}')"><i class="fas fa-save"></i> 保存</button>
+                                <button class="btn btn-outline-secondary" onclick="$('#${editorId}_wrapper').remove()"><i class="fas fa-times"></i> 关闭</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <textarea id="${editorId}" class="form-control" rows="16" style="font-family: Consolas, monospace;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `);
+            grid.prepend(panel);
+            loadTextAttachment(attachmentId, editorId);
+        }
+
+        async function loadTextAttachment(attachmentId, editorId) {
+            try {
+                const token = await getCsrfToken();
+                const resp = await fetch(`/api/notes/attachments/${attachmentId}/text`, { method:'GET', headers:{'X-CSRF-TOKEN': token}, credentials:'include' });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    $('#'+editorId).val(data.success ? (data.data || '') : '不支持的文本类型或读取失败');
+                }
+            } catch {}
+        }
+
+        async function saveTextAttachment(attachmentId, editorId) {
+            try {
+                const token = await getCsrfToken();
+                const content = $('#'+editorId).val();
+                const resp = await fetch(`/api/notes/attachments/${attachmentId}/text`, {
+                    method:'PUT',
+                    headers:{'Content-Type':'application/json','X-CSRF-TOKEN': token},
+                    credentials:'include',
+                    body: JSON.stringify(content)
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    showAlert(data.success ? '保存成功' : '保存失败', data.success ? 'success' : 'danger');
+                } else {
+                    showAlert('保存失败','danger');
+                }
+            } catch {
+                showAlert('保存失败','danger');
+            }
+        }
+
+        // 删除附件
+        async function deleteAttachment(id) {
+            if (confirm('确定要删除这个附件吗？')) {
+                try {
+                    const token = await getCsrfToken();
+                    const response = await fetch(`/api/notes/attachments/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': token
+                        },
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            // 从缓存移除并刷新网格
+                            window.currentAttachments = (window.currentAttachments || []).filter(a => (a.id||a.Id) !== id);
+                            const activeType = $('#attachTypeFilter .active').data('type') || 'all';
+                            if (typeof renderAttachmentsGrid === 'function') {
+                                renderAttachmentsGrid(activeType);
+                            } else {
+                                $(`[data-attachment-id="${id}"]`).remove();
+                            }
+                            showAlert('附件删除成功', 'success');
+                        }
+                    } else {
+                        showAlert('删除附件失败', 'danger');
+                    }
+                } catch (error) {
+                    console.error('删除附件失败:', error);
+                    showAlert('删除附件失败', 'danger');
+                }
+            }
+        }
+
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            $('body').prepend(alertHtml);
+            
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 3000);
+        }
+    </script>
+
+    <style>
+        .note-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-content {
+            pointer-events: none;
+        }
+        
+        .ql-editor {
+            min-height: 300px;
+        }
+        
+        /* 下拉菜单样式 */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            min-width: 160px;
+            padding: 0.5rem 0;
+            margin: 0.125rem 0 0;
+            background-color: #fff;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: 0.25rem;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.175);
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.25rem 1rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+        }
+        
+        .dropdown-item:hover {
+            color: #16181b;
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-divider {
+            height: 0;
+            margin: 0.5rem 0;
+            overflow: hidden;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        /* 列表视图样式 */
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .table tbody tr.selected {
+            background-color: #e3f2fd;
+        }
+        
+        .batch-toolbar {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+        }
+        
+        .view-toggle .btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .note-checkbox {
+            margin: 0;
+        }
+        
+        .badge {
+            font-size: 0.75em;
+        }
+        
+        /* 操作菜单样式 */
+        .action-menu {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 150px;
+        }
+        
+        .action-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+        
+        .action-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .action-item:last-child {
+            border-bottom: none;
+        }
+        
+        .action-item i {
+            width: 16px;
+            text-align: center;
+        }
+    </style>
+}
+
+<script>
+    // 等待jQuery加载完成
+    function waitForJQuery() {
+        if (typeof $ !== 'undefined') {
+            $(document).ready(function() {
+                // 初始化CSRF令牌
+                initializeCsrfToken();
+                
+                // 初始化编辑器
+                initializeEditor();
+                
+                // 加载笔记列表
+                loadNotes();
+                
+                // 加载分类和标签
+                loadCategories();
+                loadTags();
+                
+                // 初始化Bootstrap下拉菜单
+                initializeDropdowns();
+            });
+        } else {
+            setTimeout(waitForJQuery, 100);
+        }
+    }
+    
+    // 初始化Bootstrap下拉菜单
+    function initializeDropdowns() {
+        // 为所有下拉菜单添加点击事件
+        $(document).on('click', '.dropdown-toggle', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const $dropdown = $(this).closest('.dropdown');
+            const $menu = $dropdown.find('.dropdown-menu');
+            
+            // 关闭其他下拉菜单
+            $('.dropdown-menu').not($menu).removeClass('show');
+            $('.dropdown-toggle').not(this).attr('aria-expanded', 'false');
+            
+            // 切换当前下拉菜单
+            $menu.toggleClass('show');
+            $(this).attr('aria-expanded', $menu.hasClass('show'));
+        });
+        
+        // 点击其他地方关闭下拉菜单
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown-menu').removeClass('show');
+                $('.dropdown-toggle').attr('aria-expanded', 'false');
+            }
+        });
+    }
+    
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAll = $('#selectAll').is(':checked');
+            $('.note-checkbox').prop('checked', selectAll);
+        }
+
+        // 更新全选状态
+        function updateSelectAllState() {
+            const totalCheckboxes = $('.note-checkbox').length;
+            const checkedCheckboxes = $('.note-checkbox:checked').length;
+            
+            if (checkedCheckboxes === 0) {
+                $('#selectAll').prop('indeterminate', false).prop('checked', false);
+                $('#batchToolbar').hide();
+            } else if (checkedCheckboxes === totalCheckboxes) {
+                $('#selectAll').prop('indeterminate', false).prop('checked', true);
+                $('#batchToolbar').show();
+            } else {
+                $('#selectAll').prop('indeterminate', true);
+                $('#batchToolbar').show();
+            }
+            
+            // 更新选中计数
+            $('#selectedCount').text(checkedCheckboxes);
+        }
+
+        // 获取选中的笔记ID
+        function getSelectedNoteIds() {
+            return $('.note-checkbox:checked').map(function() {
+                return $(this).val();
+            }).get();
+        }
+
+        // 批量删除
+        function batchDelete() {
+            const selectedIds = getSelectedNoteIds();
+            if (selectedIds.length === 0) {
+                showAlert('请选择要删除的笔记', 'warning');
+                return;
+            }
+
+            if (confirm(`确定要删除选中的 ${selectedIds.length} 个笔记吗？`)) {
+                // 这里可以实现批量删除API调用
+                showAlert('批量删除功能待实现', 'info');
+            }
+        }
+
+        // 批量导出
+        function batchExport(format) {
+            const selectedIds = getSelectedNoteIds();
+            if (selectedIds.length === 0) {
+                showAlert('请选择要导出的笔记', 'warning');
+                return;
+            }
+
+            // 这里可以实现批量导出API调用
+            showAlert(`批量导出 ${selectedIds.length} 个笔记为 ${format.toUpperCase()} 格式功能待实现`, 'info');
+        }
+
+        // 显示操作菜单
+        function showActionMenu(noteId, event) {
+            event.stopPropagation();
+            
+            // 关闭其他菜单
+            $('.action-menu').remove();
+            
+            const menu = $(`
+                <div class="action-menu" style="position: absolute; z-index: 1000; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-width: 150px;">
+                    <div class="action-item" onclick="editNote(${noteId}); $('.action-menu').remove();" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-edit me-2"></i>编辑
+                    </div>
+                    <div class="action-item" onclick="exportNote(${noteId}, 'html'); $('.action-menu').remove();" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-download me-2"></i>导出HTML
+                    </div>
+                    <div class="action-item" onclick="exportNote(${noteId}, 'markdown'); $('.action-menu').remove();" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">
+                        <i class="fas fa-download me-2"></i>导出Markdown
+                    </div>
+                    <div class="action-item" onclick="deleteNote(${noteId}); $('.action-menu').remove();" style="padding: 8px 12px; cursor: pointer; color: #dc3545;">
+                        <i class="fas fa-trash me-2"></i>删除
+                    </div>
+                </div>
+            `);
+            
+            // 定位菜单
+            const button = $(event.target).closest('button');
+            const offset = button.offset();
+            menu.css({
+                position: 'absolute',
+                top: offset.top + button.outerHeight() + 5,
+                left: offset.left - 100
+            });
+            
+            $('body').append(menu);
+            
+            // 点击其他地方关闭菜单
+            setTimeout(() => {
+                $(document).one('click', function() {
+                    $('.action-menu').remove();
+                });
+            }, 100);
+        }
+
+        // 开始等待jQuery
+        waitForJQuery();
+</script>
