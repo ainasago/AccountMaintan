@@ -52,6 +52,15 @@
                                 <i class="fas fa-history me-1"></i>提醒历史
                             </a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="websiteDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-globe me-1"></i>网站管理
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="websiteDropdown">
+                                <li><a class="dropdown-item" asp-page="/Websites/Index"><i class="fas fa-globe me-2"></i>网站列表</a></li>
+                                <li><a class="dropdown-item" asp-page="/Servers/Index"><i class="fas fa-server me-2"></i>服务器管理</a></li>
+                            </ul>
+                        </li>
                         <li class="nav-item" id="adminMenu" style="display: none;">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Admin/Users/Index">
                                 <i class="fas fa-users me-1"></i>用户管理

@@ -69,30 +69,12 @@ if (httpsPort.HasValue)
 // 添加数据库上下文
 builder.Services.AddSingleton<AppDbContext>();
 
-// 配置FreeSql（与 DefaultConnection 使用同一数据库）
-var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=accounts.db";
-string ResolveSqlitePath(string conn)
+// 从AppDbContext获取FreeSql实例
+builder.Services.AddSingleton<IFreeSql>(provider => 
 {
-    const string prefix = "Data Source=";
-    var idx = conn.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-    if (idx >= 0)
-    {
-        var path = conn.Substring(idx + prefix.Length).Trim().Trim('"');
-        if (!Path.IsPathRooted(path))
-        {
-            path = Path.Combine(AppContext.BaseDirectory, path);
-        }
-        return $"Data Source={path};Version=3;";
-    }
-    // 如果不是标准格式，直接返回原连接串
-    return conn;
-}
-var sqliteConn = ResolveSqlitePath(defaultConn);
-var freeSql = new FreeSqlBuilder()
-    .UseConnectionString(DataType.Sqlite, sqliteConn)
-    .UseAutoSyncStructure(true)
-    .Build();
-builder.Services.AddSingleton<IFreeSql>(freeSql);
+    var appDbContext = provider.GetRequiredService<AppDbContext>();
+    return appDbContext.Fsql;
+});
 
 // 添加Identity数据库上下文
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -148,6 +130,12 @@ builder.Services.AddScoped<IPasswordValidatorService, PasswordValidatorService>(
 
 // 添加安全加密服务
 builder.Services.AddScoped<ISecureEncryptionService, SecureEncryptionService>();
+
+// 添加网站和服务器管理服务
+builder.Services.AddScoped<ISshService, SshService>();
+builder.Services.AddScoped<ISupervisorService, SupervisorService>();
+builder.Services.AddScoped<IWebsiteService, WebsiteService>();
+builder.Services.AddScoped<IServerService, ServerService>();
 
 // 添加CSRF令牌服务
 builder.Services.AddScoped<ICsrfTokenService, CsrfTokenService>();

@@ -1,0 +1,404 @@
+@page
+@model WebUI.Pages.Servers.IndexModel
+@{
+    ViewData["Title"] = "服务器管理";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>服务器管理
+                    </h3>
+                    <div>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createServerModal">
+                            <i class="fas fa-plus me-1"></i>新增服务器
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="batchCheckStatus()">
+                            <i class="fas fa-sync me-1"></i>批量检查状态
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 搜索和筛选 -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchInput" placeholder="搜索服务器名称或IP地址...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">所有状态</option>
+                                <option value="Connected">已连接</option>
+                                <option value="Failed">连接失败</option>
+                                <option value="Connecting">连接中</option>
+                                <option value="Disconnected">已断开</option>
+                                <option value="Unknown">未知</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="osFilter">
+                                <option value="">所有操作系统</option>
+                                <option value="Ubuntu">Ubuntu</option>
+                                <option value="CentOS">CentOS</option>
+                                <option value="Debian">Debian</option>
+                                <option value="Windows">Windows</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>清除筛选
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 服务器列表 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="serversTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>服务器名称</th>
+                                    <th>IP地址</th>
+                                    <th>操作系统</th>
+                                    <th>连接状态</th>
+                                    <th>最后连接</th>
+                                    <th>网站数量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var server in Model.Servers)
+                                {
+                                    <tr data-server-id="@server.Id" data-status="@server.ConnectionStatus" data-os="@server.OperatingSystem">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-server text-primary me-2"></i>
+                                                <div>
+                                                    <strong>@server.Name</strong>
+                                                    @if (!string.IsNullOrEmpty(server.Description))
+                                                    {
+                                                        <br><small class="text-muted">@server.Description</small>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <code>@server.IpAddress:@server.SshPort</code>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(server.OperatingSystem))
+                                            {
+                                                <span class="badge bg-info">@server.OperatingSystem</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">未知</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge status-badge" id="status-@server.Id">
+                                                @server.ConnectionStatus
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (server.LastConnectedAt.HasValue)
+                                            {
+                                                <small class="text-muted">@server.LastConnectedAt.Value.ToString("yyyy-MM-dd HH:mm")</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">从未连接</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">@server.Websites.Count</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="testConnection('@server.Id')" title="测试连接">
+                                                    <i class="fas fa-plug"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="viewResources('@server.Id')" title="查看资源">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="viewProcesses('@server.Id')" title="查看进程">
+                                                    <i class="fas fa-tasks"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="viewLogs('@server.Id')" title="查看日志">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="editServer('@server.Id')" title="编辑">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteServer('@server.Id')" title="删除">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (!Model.Servers.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">暂无服务器</h5>
+                            <p class="text-muted">点击"新增服务器"按钮开始管理您的服务器</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 创建服务器模态框 -->
+<div class="modal fade" id="createServerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增服务器</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="createServerForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.Name" class="form-label">服务器名称 *</label>
+                                <input asp-for="NewServer.Name" type="text" class="form-control" required>
+                                <span asp-validation-for="NewServer.Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.OperatingSystem" class="form-label">操作系统</label>
+                                <select asp-for="NewServer.OperatingSystem" class="form-select">
+                                    <option value="">请选择操作系统</option>
+                                    <option value="Ubuntu">Ubuntu</option>
+                                    <option value="CentOS">CentOS</option>
+                                    <option value="Debian">Debian</option>
+                                    <option value="Windows">Windows</option>
+                                </select>
+                                <span asp-validation-for="NewServer.OperatingSystem" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.IpAddress" class="form-label">IP地址 *</label>
+                                <input asp-for="NewServer.IpAddress" type="text" class="form-control" placeholder="192.168.1.100" required>
+                                <span asp-validation-for="NewServer.IpAddress" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.SshPort" class="form-label">SSH端口</label>
+                                <input asp-for="NewServer.SshPort" type="number" class="form-control" value="22">
+                                <span asp-validation-for="NewServer.SshPort" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.SshUsername" class="form-label">SSH用户名 *</label>
+                                <input asp-for="NewServer.SshUsername" type="text" class="form-control" placeholder="root" required>
+                                <span asp-validation-for="NewServer.SshUsername" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewServer.SshPassword" class="form-label">SSH密码 *</label>
+                                <input asp-for="NewServer.SshPassword" type="password" class="form-control" required>
+                                <span asp-validation-for="NewServer.SshPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewServer.SshPrivateKeyPath" class="form-label">SSH私钥路径（可选）</label>
+                        <input asp-for="NewServer.SshPrivateKeyPath" type="text" class="form-control" placeholder="/home/user/.ssh/id_rsa">
+                        <span asp-validation-for="NewServer.SshPrivateKeyPath" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewServer.Description" class="form-label">描述</label>
+                        <textarea asp-for="NewServer.Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="NewServer.Description" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-info" onclick="testConnectionBeforeCreate()">测试连接</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+                
+                <!-- 调试信息 -->
+                <div class="modal-body" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
+                    <h6>调试信息：</h6>
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <small class="text-muted">
+                        模型状态: @(ModelState.IsValid ? "有效" : "无效")<br>
+                        错误数量: @ModelState.ErrorCount
+                    </small>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 查看资源使用情况模态框 -->
+<div class="modal fade" id="resourcesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">服务器资源使用情况</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">CPU使用率</h5>
+                                <h3 id="cpuUsage" class="text-primary">--%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-success">内存使用率</h5>
+                                <h3 id="memoryUsage" class="text-success">--%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning">磁盘使用率</h5>
+                                <h3 id="diskUsage" class="text-warning">--%</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title text-info">负载平均值</h5>
+                                <h3 id="loadAverage" class="text-info">--</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">系统信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>运行时间：</strong><span id="uptime">--</span></p>
+                                <p><strong>进程数量：</strong><span id="processCount">--</span></p>
+                                <p><strong>网络入流量：</strong><span id="networkIn">--</span></p>
+                                <p><strong>网络出流量：</strong><span id="networkOut">--</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">资源使用历史</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="resourceChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看进程列表模态框 -->
+<div class="modal fade" id="processesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Supervisor进程列表</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="processesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>进程名称</th>
+                                <th>状态</th>
+                                <th>进程ID</th>
+                                <th>运行时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processesTableBody">
+                            <!-- 动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看日志模态框 -->
+<div class="modal fade" id="logsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">服务器日志</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="logType" class="form-label">日志类型</label>
+                            <select class="form-select" id="logType">
+                                <option value="syslog">系统日志</option>
+                                <option value="auth">认证日志</option>
+                                <option value="kern">内核日志</option>
+                                <option value="nginx">Nginx日志</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="logLines" class="form-label">显示行数</label>
+                            <select class="form-select" id="logLines">
+                                <option value="50">50行</option>
+                                <option value="100" selected>100行</option>
+                                <option value="200">200行</option>
+                                <option value="500">500行</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-primary d-block" onclick="refreshLogs()">
+                                <i class="fas fa-sync me-1"></i>刷新日志
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <pre id="logContent" class="bg-dark text-light p-3 rounded" style="max-height: 500px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/server-management.js"></script>
+}

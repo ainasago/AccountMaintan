@@ -18,6 +18,9 @@
                     <form id="loginForm" method="post">
                         <div asp-validation-summary="All" class="text-danger mb-3"></div>
                         
+                        <!-- 隐藏的加密令牌字段 -->
+                        <input type="hidden" id="encryptionToken" name="EncryptionToken" value="@ViewData["PasswordEncryptionToken"]" />
+                        
                         <div class="form-group mb-3">
                             <label asp-for="Input.Email" class="form-label">邮箱地址</label>
                             <div class="input-group">
@@ -35,9 +38,9 @@
                                 <span class="input-group-text">
                                     <i class="fas fa-lock"></i>
                                 </span>
-                                <input asp-for="Input.Password" type="password" class="form-control" placeholder="请输入密码" />
-                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('Input_Password')">
-                                    <i class="fas fa-eye" id="Input_Password_icon"></i>
+                                <input asp-for="Input.Password" type="password" class="form-control" id="password" placeholder="请输入密码" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                    <i class="fas fa-eye" id="password_icon"></i>
                                 </button>
                             </div>
                             <span asp-validation-for="Input.Password" class="text-danger"></span>
@@ -77,6 +80,88 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        // 全局变量
+        let passwordEncryptionToken = null;
+
+        // 初始化密码加密令牌
+        async function initializePasswordEncryptionToken() {
+            try {
+                console.log('正在获取密码加密令牌...');
+                const response = await fetch('/api/admin/anonymous/password-encryption-token', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                console.log('密码加密令牌响应状态:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('密码加密令牌响应数据:', data);
+                    if (data.success) {
+                        passwordEncryptionToken = data.token;
+                        console.log('密码加密令牌已获取:', passwordEncryptionToken.substring(0, 8) + '...');
+                    } else {
+                        console.error('密码加密令牌获取失败:', data.message);
+                    }
+                } else {
+                    console.error('密码加密令牌请求失败:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('获取密码加密令牌失败:', error);
+            }
+        }
+
+        // 获取密码加密令牌（如果不存在则重新获取）
+        async function getPasswordEncryptionToken() {
+            if (!passwordEncryptionToken) {
+                await initializePasswordEncryptionToken();
+            }
+            return passwordEncryptionToken;
+        }
+
+        // 密码加密函数（与后端保持一致）
+        async function encryptPassword(password, token) {
+            try {
+                // 将密码和令牌组合
+                const combinedData = password + ':' + token;
+                
+                // 使用Web Crypto API进行AES-CBC加密
+                const encoder = new TextEncoder();
+                const data = encoder.encode(combinedData);
+                
+                // 使用固定的加密密钥（与后端保持一致）
+                const keyString = 'AccountManagerPasswordEncryptionKey2024!';
+                const keyData = await crypto.subtle.digest('SHA-256', encoder.encode(keyString));
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    keyData,
+                    { name: 'AES-CBC' },
+                    false,
+                    ['encrypt']
+                );
+                
+                // 生成随机IV（AES-CBC需要16字节IV）
+                const iv = crypto.getRandomValues(new Uint8Array(16));
+                
+                // 加密数据
+                const encryptedData = await crypto.subtle.encrypt(
+                    { name: 'AES-CBC', iv: iv },
+                    key,
+                    data
+                );
+                
+                // 将IV和加密数据组合并转换为Base64
+                const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+                combined.set(iv);
+                combined.set(new Uint8Array(encryptedData), iv.length);
+                
+                return btoa(String.fromCharCode(...combined));
+            } catch (error) {
+                console.error('密码加密失败:', error);
+                throw new Error('密码加密失败');
+            }
+        }
+
         function togglePassword(inputId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(inputId + '_icon');
@@ -91,5 +176,44 @@
                 icon.classList.add('fa-eye');
             }
         }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化密码加密令牌
+            initializePasswordEncryptionToken();
+        });
+
+        // 表单提交处理
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            const password = document.getElementById('password').value;
+            
+            // 获取加密令牌
+            const encryptionToken = await getPasswordEncryptionToken();
+            if (!encryptionToken) {
+                e.preventDefault();
+                alert('密码加密令牌缺失，请刷新页面重试');
+                return;
+            }
+            
+            // 加密密码
+            e.preventDefault();
+            
+            try {
+                // 加密密码
+                const encryptedPassword = await encryptPassword(password, encryptionToken);
+                
+                // 更新表单字段值
+                document.getElementById('password').value = encryptedPassword;
+                
+                // 更新隐藏的加密令牌字段
+                document.getElementById('encryptionToken').value = encryptionToken;
+                
+                // 重新提交表单
+                this.submit();
+            } catch (error) {
+                alert('密码加密失败，请重试');
+                console.error('密码加密错误:', error);
+            }
+        });
     </script>
 }

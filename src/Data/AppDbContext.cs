@@ -12,7 +12,7 @@ public class AppDbContext
 
     public AppDbContext(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=accounts.db";
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("未找到DefaultConnection连接字符串");
         
         Fsql = new FreeSqlBuilder()
             .UseConnectionString(DataType.Sqlite, connectionString)
@@ -79,6 +79,79 @@ public class AppDbContext
             e.Property(ads => ads.UpdatedBy).HasMaxLength(450);
             e.ToTable("AdminSettings");
         });
+
+        // 配置服务器实体
+        Fsql.CodeFirst.Entity<Server>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.UserId).HasMaxLength(450).IsRequired();
+            e.Property(s => s.Name).HasMaxLength(100);
+            e.Property(s => s.Description).HasMaxLength(500);
+            e.Property(s => s.IpAddress).HasMaxLength(45);
+            e.Property(s => s.SshUsername).HasMaxLength(100);
+            e.Property(s => s.SshPassword).HasMaxLength(1000);
+            e.Property(s => s.SshPrivateKeyPath).HasMaxLength(500);
+            e.Property(s => s.OperatingSystem).HasMaxLength(50);
+            e.Property(s => s.ConnectionStatus).HasMaxLength(20);
+            e.Property(s => s.Notes).HasMaxLength(1000);
+        });
+
+        // 配置网站实体
+        Fsql.CodeFirst.Entity<Website>(e =>
+        {
+            e.HasKey(w => w.Id);
+            e.Property(w => w.UserId).HasMaxLength(450).IsRequired();
+            e.Property(w => w.Name).HasMaxLength(100);
+            e.Property(w => w.Description).HasMaxLength(500);
+            e.Property(w => w.Domain).HasMaxLength(255);
+            e.Property(w => w.WebPath).HasMaxLength(500);
+            e.Property(w => w.SupervisorProcessName).HasMaxLength(100);
+            e.Property(w => w.Status).HasMaxLength(20);
+            e.Property(w => w.Notes).HasMaxLength(1000);
+            e.HasOne(w => w.Server)
+             .WithMany(s => s.Websites)
+             .HasForeignKey(w => w.ServerId);
+        });
+
+        // 配置网站账号实体
+        Fsql.CodeFirst.Entity<WebsiteAccount>(e =>
+        {
+            e.HasKey(wa => wa.Id);
+            e.Property(wa => wa.UserId).HasMaxLength(450).IsRequired();
+            e.Property(wa => wa.AccountType).HasMaxLength(50);
+            e.Property(wa => wa.Username).HasMaxLength(100);
+            e.Property(wa => wa.Password).HasMaxLength(1000);
+            e.Property(wa => wa.Email).HasMaxLength(255);
+            e.Property(wa => wa.Notes).HasMaxLength(500);
+            e.HasOne(wa => wa.Website)
+             .WithMany(w => w.WebsiteAccounts)
+             .HasForeignKey(wa => wa.WebsiteId);
+        });
+
+        // 配置网站访问日志实体
+        Fsql.CodeFirst.Entity<WebsiteAccessLog>(e =>
+        {
+            e.HasKey(wal => wal.Id);
+            e.Property(wal => wal.UserId).HasMaxLength(450).IsRequired();
+            e.Property(wal => wal.AccessType).HasMaxLength(50);
+            e.Property(wal => wal.IpAddress).HasMaxLength(45);
+            e.Property(wal => wal.UserAgent).HasMaxLength(500);
+            e.Property(wal => wal.AccessPath).HasMaxLength(500);
+            e.Property(wal => wal.Notes).HasMaxLength(1000);
+            e.HasOne(wal => wal.Website)
+             .WithMany(w => w.AccessLogs)
+             .HasForeignKey(wal => wal.WebsiteId);
+        });
+
+        // 配置服务器资源使用情况实体
+        Fsql.CodeFirst.Entity<ServerResourceUsage>(e =>
+        {
+            e.HasKey(sru => sru.Id);
+            e.Property(sru => sru.UserId).HasMaxLength(450).IsRequired();
+            e.HasOne(sru => sru.Server)
+             .WithMany(s => s.ResourceUsages)
+             .HasForeignKey(sru => sru.ServerId);
+        });
     }
 
     public void InitializeDatabase()
@@ -88,6 +161,11 @@ public class AppDbContext
         Fsql.CodeFirst.SyncStructure<SecurityQuestion>();
         Fsql.CodeFirst.SyncStructure<AccountActivity>();
         Fsql.CodeFirst.SyncStructure<AdminSettings>();
+        Fsql.CodeFirst.SyncStructure<Server>();
+        Fsql.CodeFirst.SyncStructure<Website>();
+        Fsql.CodeFirst.SyncStructure<WebsiteAccount>();
+        Fsql.CodeFirst.SyncStructure<WebsiteAccessLog>();
+        Fsql.CodeFirst.SyncStructure<ServerResourceUsage>();
 
         // 检查是否需要插入示例数据
         var accountCount = Fsql.Select<Account>().Count();

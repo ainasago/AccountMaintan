@@ -9,7 +9,30 @@ namespace WebUI.Pages.Security;
 [Authorize]
 public class BackupModel : PageModel
 {
+    private readonly IConfiguration _configuration;
+    
+    public BackupModel(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+    
     public string? Message { get; set; }
+
+    private string ExtractDbPathFromConnectionString(string connectionString)
+    {
+        const string prefix = "Data Source=";
+        var idx = connectionString.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+        if (idx >= 0)
+        {
+            var path = connectionString.Substring(idx + prefix.Length).Trim().Trim('"');
+            if (!Path.IsPathRooted(path))
+            {
+                path = Path.Combine(AppContext.BaseDirectory, path);
+            }
+            return path;
+        }
+        throw new InvalidOperationException($"无法从连接字符串中提取数据库路径: {connectionString}");
+    }
 
     public IActionResult OnGet()
     {
@@ -36,7 +59,8 @@ public class BackupModel : PageModel
                 try
                 {
                     var tempPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid():N}.db");
-                    using (var source = new SqliteConnection($"Data Source={absPath}"))
+                    var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("未找到DefaultConnection连接字符串");
+                    using (var source = new SqliteConnection(connectionString))
                     using (var dest = new SqliteConnection($"Data Source={tempPath}"))
                     {
                         source.Open();
@@ -60,8 +84,15 @@ public class BackupModel : PageModel
                 }
             }
 
-            AddDb(Path.Combine(webUiRoot, "accounts.db"), "accounts.db");
-            AddDb(Path.Combine(webUiRoot, "identity.db"), "identity.db");
+            // 从连接字符串中提取数据库文件名
+            var defaultConnStr = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("未找到DefaultConnection连接字符串");
+            var identityConnStr = _configuration.GetConnectionString("IdentityConnection") ?? throw new InvalidOperationException("未找到IdentityConnection连接字符串");
+            
+            var defaultDbPath = ExtractDbPathFromConnectionString(defaultConnStr);
+            var identityDbPath = ExtractDbPathFromConnectionString(identityConnStr);
+            
+            AddDb(Path.Combine(webUiRoot, defaultDbPath), Path.GetFileName(defaultDbPath));
+            AddDb(Path.Combine(webUiRoot, identityDbPath), Path.GetFileName(identityDbPath));
             AddDb(Path.Combine(webUiRoot, "Data", "reminder_records.db"), Path.Combine("Data", "reminder_records.db"));
 
             // appsettings files (masking sensitive info would be a separate enhancement)

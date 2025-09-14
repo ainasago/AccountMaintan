@@ -34,11 +34,11 @@ public class DbInitializationService : IDbInitializationService
     {
         try
         {
-            // 确保Identity数据库存在
-            await _identityContext.Database.EnsureCreatedAsync();
-            
-            // 确保应用数据库存在
+            // 先初始化FreeSql数据库（创建应用表）
             _appContext.InitializeDatabase();
+            
+            // 然后应用Identity迁移（创建Identity表）
+            await _identityContext.Database.MigrateAsync();
 
             // 创建默认角色
             await CreateDefaultRolesAsync();
@@ -92,7 +92,7 @@ public class DbInitializationService : IDbInitializationService
             CreatedAt = DateTime.Now
         };
 
-        var result = await _userManager.CreateAsync(adminUser, "Admin123!");
+        var result = await _userManager.CreateAsync(adminUser, "Admin123qweasd!");
         
         if (result.Succeeded)
         {

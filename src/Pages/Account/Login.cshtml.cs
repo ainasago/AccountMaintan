@@ -14,16 +14,19 @@ public class LoginModel : PageModel
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<LoginModel> _logger;
     private readonly IAdminService _adminService;
+    private readonly IPasswordEncryptionService _passwordEncryptionService;
 
     public LoginModel(SignInManager<ApplicationUser> signInManager, 
                      UserManager<ApplicationUser> userManager,
                      ILogger<LoginModel> logger,
-                     IAdminService adminService)
+                     IAdminService adminService,
+                     IPasswordEncryptionService passwordEncryptionService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _logger = logger;
         _adminService = adminService;
+        _passwordEncryptionService = passwordEncryptionService;
     }
 
     [BindProperty]
@@ -76,6 +79,17 @@ public class LoginModel : PageModel
             AllowRegistration = false; // 默认不允许注册
         }
 
+        // 获取密码加密令牌
+        try
+        {
+            var token = _passwordEncryptionService.GenerateEncryptionToken();
+            ViewData["PasswordEncryptionToken"] = token;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "生成密码加密令牌失败");
+        }
+
         ReturnUrl = returnUrl;
     }
 
@@ -85,6 +99,31 @@ public class LoginModel : PageModel
 
         if (ModelState.IsValid)
         {
+            // 解密密码
+            string decryptedPassword = Input.Password;
+            try
+            {
+                var encryptionToken = Request.Form["EncryptionToken"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(encryptionToken))
+                {
+                    _logger.LogInformation("登录请求 - Email: {Email}, HasEncryptionToken: true, TokenLength: {TokenLength}", 
+                        Input.Email, encryptionToken.Length);
+                    
+                    decryptedPassword = _passwordEncryptionService.DecryptPassword(Input.Password, encryptionToken);
+                    _logger.LogInformation("密码解密成功");
+                }
+                else
+                {
+                    _logger.LogWarning("未提供加密令牌，使用明文密码");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "密码解密失败");
+                ModelState.AddModelError(string.Empty, "密码解密失败，请重试。");
+                return Page();
+            }
+
             _logger.LogInformation("尝试登录: {Email}", Input.Email);
             var user = await _userManager.FindByEmailAsync(Input.Email);
             if (user != null)
@@ -104,7 +143,7 @@ public class LoginModel : PageModel
             }
 
             // 使用用户名进行登录（因为用户名现在就是邮箱）
-            var result = await _signInManager.PasswordSignInAsync(user?.UserName ?? Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+            var result = await _signInManager.PasswordSignInAsync(user?.UserName ?? Input.Email, decryptedPassword, Input.RememberMe, lockoutOnFailure: true);
             
             if (result.Succeeded)
             {

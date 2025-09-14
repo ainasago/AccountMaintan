@@ -294,6 +294,31 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// 获取密码加密令牌（匿名访问，用于登录页面）
+    /// </summary>
+    [HttpGet("anonymous/password-encryption-token")]
+    [AllowAnonymous]
+    public IActionResult GetAnonymousPasswordEncryptionToken()
+    {
+        try
+        {
+            var token = _passwordEncryptionService.GenerateEncryptionToken();
+            var expiryTime = _passwordEncryptionService.GetTokenExpiryTime(token);
+            
+            return Ok(new { 
+                success = true, 
+                token = token,
+                expiresAt = expiryTime.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取匿名密码加密令牌失败");
+            return StatusCode(500, new { success = false, message = "获取密码加密令牌失败" });
+        }
+    }
+
+    /// <summary>
     /// 检查用户权限
     /// </summary>
     [HttpGet("check-permissions")]

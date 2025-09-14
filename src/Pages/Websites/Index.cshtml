@@ -1,0 +1,421 @@
+@page
+@model WebUI.Pages.Websites.IndexModel
+@{
+    ViewData["Title"] = "网站管理";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-globe me-2"></i>网站管理
+                    </h3>
+                    <div>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWebsiteModal">
+                            <i class="fas fa-plus me-1"></i>新增网站
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="batchCheckStatus()">
+                            <i class="fas fa-sync me-1"></i>批量检查状态
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 搜索和筛选 -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="searchInput" placeholder="搜索网站名称或域名...">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">所有状态</option>
+                                <option value="Running">运行中</option>
+                                <option value="Stopped">已停止</option>
+                                <option value="Starting">启动中</option>
+                                <option value="Exited">已退出</option>
+                                <option value="Error">异常</option>
+                                <option value="Unknown">未知</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="serverFilter">
+                                <option value="">所有服务器</option>
+                                @foreach (var server in Model.Servers)
+                                {
+                                    <option value="@server.Id">@server.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">所有分类</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="tagFilter">
+                                <option value="">所有标签</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>清除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 网站列表 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="websitesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>网站名称</th>
+                                    <th>域名</th>
+                                    <th>服务器</th>
+                                    <th>分类</th>
+                                    <th>标签</th>
+                                    <th>状态</th>
+                                    <th>最后检查</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var website in Model.Websites)
+                                {
+                                    <tr data-website-id="@website.Id" data-server-id="@website.ServerId" data-status="@website.Status" data-category="@website.Category" data-tags="@website.Tags">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-globe text-primary me-2"></i>
+                                                <div>
+                                                    <strong>@website.Name</strong>
+                                                    @if (!string.IsNullOrEmpty(website.Description))
+                                                    {
+                                                        <br><small class="text-muted">@website.Description</small>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="@website.FullUrl" target="_blank" class="text-decoration-none">
+                                                @website.Domain
+                                                <i class="fas fa-external-link-alt ms-1"></i>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @if (website.Server != null)
+                                            {
+                                                <span class="badge bg-info">@website.Server.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">未关联服务器</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(website.Category))
+                                            {
+                                                <span class="badge bg-primary">@website.Category</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(website.Tags))
+                                            {
+                                                @foreach (var tag in website.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                                {
+                                                    <span class="badge bg-secondary me-1">@tag.Trim()</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge status-badge" id="status-@website.Id">
+                                                @website.Status
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (website.LastCheckedAt.HasValue)
+                                            {
+                                                <small class="text-muted">@website.LastCheckedAt.Value.ToString("yyyy-MM-dd HH:mm")</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">从未检查</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="checkStatus('@website.Id')" title="检查状态">
+                                                    <i class="fas fa-sync"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-success" onclick="restartWebsite('@website.Id')" title="重启网站">
+                                                    <i class="fas fa-redo"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" onclick="viewLogs('@website.Id')" title="查看日志">
+                                                    <i class="fas fa-file-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="editWebsite('@website.Id')" title="编辑">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteWebsite('@website.Id')" title="删除">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (!Model.Websites.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-globe fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">暂无网站</h5>
+                            <p class="text-muted">点击"新增网站"按钮开始管理您的网站</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 创建网站模态框 -->
+<div class="modal fade" id="createWebsiteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增网站</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+                    <form method="post" id="createWebsiteForm">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewWebsite.Name" class="form-label">网站名称 *</label>
+                                <input asp-for="NewWebsite.Name" class="form-control" required>
+                                <span asp-validation-for="NewWebsite.Name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewWebsite.Domain" class="form-label">域名 *</label>
+                                <input asp-for="NewWebsite.Domain" class="form-control" placeholder="example.com" required>
+                                <span asp-validation-for="NewWebsite.Domain" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewWebsite.Port" class="form-label">端口</label>
+                                <input asp-for="NewWebsite.Port" type="number" class="form-control" value="80">
+                                <span asp-validation-for="NewWebsite.Port" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check mt-4">
+                                    <input asp-for="NewWebsite.UseHttps" class="form-check-input" type="checkbox">
+                                    <label asp-for="NewWebsite.UseHttps" class="form-check-label">
+                                        使用HTTPS
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewWebsite.ServerId" class="form-label">所属服务器 *</label>
+                                <select asp-for="NewWebsite.ServerId" class="form-select" required>
+                                    <option value="">请选择服务器</option>
+                                    @foreach (var server in Model.Servers)
+                                    {
+                                        <option value="@server.Id">@server.Name (@server.IpAddress)</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="NewWebsite.ServerId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NewWebsite.SupervisorProcessName" class="form-label">Supervisor进程名</label>
+                                <input asp-for="NewWebsite.SupervisorProcessName" type="text" class="form-control" placeholder="可选，用于进程管理">
+                                <span asp-validation-for="NewWebsite.SupervisorProcessName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewWebsite.WebPath" class="form-label">网站路径</label>
+                        <input asp-for="NewWebsite.WebPath" type="text" class="form-control" placeholder="/var/www/html">
+                        <span asp-validation-for="NewWebsite.WebPath" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewWebsite.Description" class="form-label">描述</label>
+                        <textarea asp-for="NewWebsite.Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="NewWebsite.Description" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 查看日志模态框 -->
+<div class="modal fade" id="logsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">网站日志</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="logLines" class="form-label">显示行数</label>
+                            <select class="form-select" id="logLines">
+                                <option value="50">50行</option>
+                                <option value="100" selected>100行</option>
+                                <option value="200">200行</option>
+                                <option value="500">500行</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-primary d-block" onclick="refreshLogs()">
+                                <i class="fas fa-sync me-1"></i>刷新日志
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <pre id="logContent" class="bg-dark text-light p-3 rounded" style="max-height: 500px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑网站模态框 -->
+<div class="modal fade" id="editWebsiteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑网站</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editWebsiteId">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteName" class="form-label">网站名称 *</label>
+                            <input type="text" class="form-control" id="editWebsiteName" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteDomain" class="form-label">域名 *</label>
+                            <input type="text" class="form-control" id="editWebsiteDomain" placeholder="example.com" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsitePort" class="form-label">端口</label>
+                            <input type="number" class="form-control" id="editWebsitePort" value="80">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="editWebsiteUseHttps">
+                                <label class="form-check-label" for="editWebsiteUseHttps">
+                                    使用HTTPS
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteServerId" class="form-label">所属服务器 *</label>
+                            <select class="form-select" id="editWebsiteServerId" required>
+                                <option value="">请选择服务器</option>
+                                @foreach (var server in Model.Servers)
+                                {
+                                    <option value="@server.Id">@server.Name (@server.IpAddress)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteSupervisorProcessName" class="form-label">Supervisor进程名</label>
+                            <input type="text" class="form-control" id="editWebsiteSupervisorProcessName" placeholder="可选，用于进程管理">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="editWebsiteWebPath" class="form-label">网站路径</label>
+                    <input type="text" class="form-control" id="editWebsiteWebPath" placeholder="/var/www/html">
+                </div>
+                <div class="mb-3">
+                    <label for="editWebsiteDescription" class="form-label">描述</label>
+                    <textarea class="form-control" id="editWebsiteDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="editWebsiteNotes" class="form-label">备注</label>
+                    <textarea class="form-control" id="editWebsiteNotes" rows="3"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteTags" class="form-label">标签</label>
+                            <input type="text" class="form-control" id="editWebsiteTags" placeholder="用逗号分隔多个标签">
+                            <small class="form-text text-muted">多个标签用逗号分隔，如：前端,React,开发环境</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="editWebsiteCategory" class="form-label">分类</label>
+                            <input type="text" class="form-control" id="editWebsiteCategory" placeholder="如：开发环境">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="editWebsiteIsActive" checked>
+                        <label class="form-check-label" for="editWebsiteIsActive">
+                            启用
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveWebsiteEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/website-management.js"></script>
+}

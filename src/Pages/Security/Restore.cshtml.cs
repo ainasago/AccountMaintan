@@ -16,9 +16,8 @@ public class RestoreModel : PageModel
     private static readonly HashSet<string> Whitelist = new(StringComparer.OrdinalIgnoreCase)
     {
         "accounts.db",
-        "identity.db",
-        "identity.db-shm",
-        "identity.db-wal",
+        "accounts.db-shm",
+        "accounts.db-wal",
         Path.Combine("Data", "reminder_records.db"),
         "appsettings.json",
         "appsettings.Development.json"
