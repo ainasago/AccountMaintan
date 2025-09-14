@@ -76,11 +76,7 @@ public class ChangePasswordModel : PageModel
         {
             ModelState.AddModelError(string.Empty, "修改密码时必须输入当前密码");
         }
-
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+ 
 
         var user = await _userManager.GetUserAsync(User);
         if (user == null)

@@ -117,7 +117,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
             _logger.LogDebug("令牌验证通过，开始解密数据");
 
             // 解密密码（使用AES-CBC方式，与前端保持一致）
-            var decryptedData = DecryptAesGcm(encryptedPassword, _encryptionKey);
+            var decryptedData = DecryptAesCbc(encryptedPassword, _encryptionKey);
             _logger.LogDebug("数据解密完成，解密后长度: {Length}", decryptedData?.Length ?? 0);
             
             var parts = decryptedData.Split(':', 2);
@@ -268,7 +268,7 @@ public class PasswordEncryptionService : IPasswordEncryptionService
     /// <summary>
     /// AES-CBC解密（与前端Web Crypto API兼容）
     /// </summary>
-    private string DecryptAesGcm(string cipherText, string key)
+    private string DecryptAesCbc(string cipherText, string key)
     {
         try
         {

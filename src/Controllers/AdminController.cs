@@ -234,7 +234,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// 获取密码加密令牌
+    /// 获取密码加密令牌（管理员专用）
     /// </summary>
     [HttpGet("password-encryption-token")]
     public IActionResult GetPasswordEncryptionToken()
@@ -259,6 +259,36 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取密码加密令牌失败");
+            return StatusCode(500, new { success = false, message = "获取密码加密令牌失败" });
+        }
+    }
+
+    /// <summary>
+    /// 获取密码加密令牌（普通用户专用）
+    /// </summary>
+    [HttpGet("user/password-encryption-token")]
+    public IActionResult GetUserPasswordEncryptionToken()
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null)
+            {
+                return Unauthorized();
+            }
+
+            var token = _passwordEncryptionService.GenerateEncryptionToken();
+            var expiryTime = _passwordEncryptionService.GetTokenExpiryTime(token);
+            
+            return Ok(new { 
+                success = true, 
+                token = token,
+                expiresAt = expiryTime.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户密码加密令牌失败");
             return StatusCode(500, new { success = false, message = "获取密码加密令牌失败" });
         }
     }

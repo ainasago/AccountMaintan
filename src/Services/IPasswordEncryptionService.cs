@@ -32,3 +32,4 @@ public interface IPasswordEncryptionService
     /// </summary>
     DateTime GetTokenExpiryTime(string token);
 }
+
