@@ -29,6 +29,102 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// 更新用户（可选修改密码）
+    /// </summary>
+    [HttpPut("users/{id}")]
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request)
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null || !await _adminService.IsAdminAsync(currentUserId))
+            {
+                return Forbid();
+            }
+
+            var user = await _adminService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "用户不存在" });
+            }
+
+            // 不能修改超级管理员的管理员位（但允许更新显示名称/密码）
+            if (user.IsSuperAdmin && request.IsAdmin.HasValue && request.IsAdmin.Value == false)
+            {
+                return BadRequest(new { success = false, message = "不能撤销超级管理员权限" });
+            }
+
+            // 更新可变更的字段
+            if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            {
+                user.DisplayName = request.DisplayName.Trim();
+            }
+            if (request.IsAdmin.HasValue)
+            {
+                user.IsAdmin = request.IsAdmin.Value;
+            }
+
+            // 处理可选的密码修改
+            if (!string.IsNullOrWhiteSpace(request.EncryptedNewPassword) || !string.IsNullOrWhiteSpace(request.EncryptedConfirmPassword))
+            {
+                if (string.IsNullOrWhiteSpace(request.EncryptedNewPassword) || string.IsNullOrWhiteSpace(request.EncryptedConfirmPassword) || string.IsNullOrWhiteSpace(request.EncryptionToken))
+                {
+                    return BadRequest(new { success = false, message = "密码修改需要提供加密后的新密码、确认密码以及令牌" });
+                }
+
+                string newPassword;
+                string confirmPassword;
+                try
+                {
+                    newPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedNewPassword, request.EncryptionToken);
+                    confirmPassword = _passwordEncryptionService.DecryptPassword(request.EncryptedConfirmPassword, request.EncryptionToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "编辑用户解密新密码失败");
+                    return BadRequest(new { success = false, message = "新密码解密失败，请刷新页面重试" });
+                }
+
+                if (newPassword != confirmPassword)
+                {
+                    return BadRequest(new { success = false, message = "新密码与确认密码不一致" });
+                }
+
+                // 使用Identity重置密码（无需旧密码）
+                try
+                {
+                    // 先移除现有密码（如果有）
+                    var removeResult = await HttpContext.RequestServices
+                        .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
+                        .RemovePasswordAsync(user);
+                    // 无密码时Remove可能失败，忽略
+
+                    var addResult = await HttpContext.RequestServices
+                        .GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>()
+                        .AddPasswordAsync(user, newPassword);
+                    if (!addResult.Succeeded)
+                    {
+                        var errors = string.Join(", ", addResult.Errors.Select(e => e.Description));
+                        return BadRequest(new { success = false, message = $"修改密码失败: {errors}" });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "设置用户新密码失败");
+                    return StatusCode(500, new { success = false, message = "设置新密码时发生错误" });
+                }
+            }
+
+            var updateResult = await _adminService.UpdateUserAsync(user);
+            return Ok(new { success = updateResult.success, message = updateResult.message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "更新用户失败");
+            return StatusCode(500, new { success = false, message = "更新用户失败" });
+        }
+    }
+    /// <summary>
     /// 获取所有用户
     /// </summary>
     [HttpGet("users")]
@@ -49,6 +145,43 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "获取用户列表失败");
             return StatusCode(500, new { success = false, message = "获取用户列表失败" });
+        }
+    }
+
+    /// <summary>
+    /// 根据ID获取用户
+    /// </summary>
+    [HttpGet("users/{id}")]
+    public async Task<IActionResult> GetUserById(string id)
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null || !await _adminService.IsAdminAsync(currentUserId))
+            {
+                return Forbid();
+            }
+
+            var user = await _adminService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "用户不存在" });
+            }
+
+            return Ok(new { success = true, data = new {
+                user.Id,
+                user.DisplayName,
+                user.Email,
+                user.IsAdmin,
+                user.IsEnabled,
+                user.CreatedAt,
+                user.LastLoginAt
+            }});
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取用户失败: {UserId}", id);
+            return StatusCode(500, new { success = false, message = "获取用户失败" });
         }
     }
 
@@ -179,53 +312,6 @@ public class AdminController : ControllerBase
         {
             _logger.LogError(ex, "删除用户失败");
             return StatusCode(500, new { success = false, message = "删除用户失败" });
-        }
-    }
-
-    /// <summary>
-    /// 更新用户信息（显示名称、邮箱、管理员标志）
-    /// </summary>
-    [HttpPut("users/{id}")]
-    public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request)
-    {
-        try
-        {
-            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (currentUserId == null || !await _adminService.IsAdminAsync(currentUserId))
-            {
-                return Forbid();
-            }
-
-            var user = await _adminService.GetUserByIdAsync(id);
-            if (user == null)
-            {
-                return NotFound(new { success = false, message = "用户不存在" });
-            }
-
-            if (user.IsSuperAdmin)
-            {
-                return BadRequest(new { success = false, message = "不能修改超级管理员" });
-            }
-
-            // 更新字段（仅基础信息）
-            if (!string.IsNullOrWhiteSpace(request.DisplayName))
-            {
-                user.DisplayName = request.DisplayName.Trim();
-            }
-            if (!string.IsNullOrWhiteSpace(request.Email))
-            {
-                user.Email = request.Email.Trim();
-                user.UserName = request.Email.Trim();
-            }
-            user.IsAdmin = request.IsAdmin;
-
-            var result = await _adminService.UpdateUserAsync(user);
-            return Ok(new { success = result.success, message = result.message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "更新用户失败: {UserId}", id);
-            return StatusCode(500, new { success = false, message = "更新用户失败" });
         }
     }
 
@@ -433,7 +519,11 @@ public class CreateUserRequest
 /// </summary>
 public class UpdateUserRequest
 {
-    public string DisplayName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public bool IsAdmin { get; set; } = false;
+    public string? DisplayName { get; set; }
+    public bool? IsAdmin { get; set; }
+
+    // 可选：修改密码（加密传输）
+    public string? EncryptedNewPassword { get; set; }
+    public string? EncryptedConfirmPassword { get; set; }
+    public string? EncryptionToken { get; set; }
 }
