@@ -92,6 +92,22 @@ function initializeMenu() {
         }
     });
     
+    // 添加菜单项悬停调试信息
+    $sidebar.find('.nav-link').on('mouseenter.menu', function() {
+        if ($(window).width() <= 767.98) {
+            const $link = $(this);
+            const $p = $link.find('p');
+            console.log('菜单项悬停:', {
+                linkText: $link.text().trim(),
+                pDisplay: $p.css('display'),
+                pVisibility: $p.css('visibility'),
+                pOpacity: $p.css('opacity'),
+                linkClasses: $link.attr('class'),
+                sidebarClasses: $sidebar.attr('class')
+            });
+        }
+    });
+    
     // 窗口大小改变时重新初始化
     $(window).on('resize.menu', function() {
         console.log('窗口大小改变，重新初始化菜单');
@@ -143,6 +159,10 @@ function openSidebar() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    console.log('开始打开侧边栏');
+    console.log('Sidebar元素:', $sidebar.length);
+    console.log('Overlay元素:', $overlay.length);
+    
     // 确保所有相关元素都处于正确状态
     $sidebar.addClass('sidebar-open');
     $overlay.addClass('show');
@@ -151,7 +171,86 @@ function openSidebar() {
     // 防止body滚动
     $('body').css('overflow', 'hidden');
     
+    // 检查菜单项状态
+    const $navLinks = $sidebar.find('.nav-link');
+    console.log('菜单项数量:', $navLinks.length);
+    
+    $navLinks.each(function(index) {
+        const $link = $(this);
+        const $p = $link.find('p');
+        const $i = $link.find('i');
+        
+        console.log(`菜单项 ${index + 1}:`, {
+            linkText: $link.text().trim(),
+            pElement: $p.length,
+            iElement: $i.length,
+            pDisplay: $p.css('display'),
+            pVisibility: $p.css('visibility'),
+            pOpacity: $p.css('opacity'),
+            linkDisplay: $link.css('display'),
+            linkFlexDirection: $link.css('flex-direction'),
+            linkAlignItems: $link.css('align-items')
+        });
+    });
+    
+    // 强制重新计算样式
+    setTimeout(function() {
+        console.log('强制重新计算样式后:');
+        $navLinks.each(function(index) {
+            const $link = $(this);
+            const $p = $link.find('p');
+            console.log(`菜单项 ${index + 1} 重新计算后:`, {
+                pDisplay: $p.css('display'),
+                pVisibility: $p.css('visibility'),
+                pOpacity: $p.css('opacity'),
+                linkDisplay: $link.css('display')
+            });
+        });
+    }, 100);
+    
+    // 强制刷新菜单项样式
+    forceRefreshMenuItems();
+    
     console.log('侧边栏已打开');
+}
+
+// 强制刷新菜单项样式
+function forceRefreshMenuItems() {
+    const $sidebar = $('.main-sidebar');
+    const $navLinks = $sidebar.find('.nav-link');
+    
+    console.log('强制刷新菜单项样式');
+    
+    $navLinks.each(function(index) {
+        const $link = $(this);
+        const $p = $link.find('p');
+        
+        // 强制应用样式
+        $p.css({
+            'display': 'block',
+            'opacity': '1',
+            'visibility': 'visible',
+            'white-space': 'nowrap',
+            'overflow': 'visible',
+            'text-overflow': 'unset',
+            'margin': '0',
+            'padding': '0'
+        });
+        
+        $link.css({
+            'display': 'flex',
+            'align-items': 'center',
+            'padding': '0.5rem 1rem',
+            'white-space': 'nowrap'
+        });
+        
+        console.log(`强制刷新菜单项 ${index + 1}:`, {
+            linkText: $link.text().trim(),
+            pDisplay: $p.css('display'),
+            pVisibility: $p.css('visibility'),
+            pOpacity: $p.css('opacity')
+        });
+    });
 }
 
 // 关闭侧边栏

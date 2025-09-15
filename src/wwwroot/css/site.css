@@ -152,10 +152,41 @@
     /* 确保移动端菜单文字显示 */
     .main-sidebar.sidebar-open .nav-sidebar .nav-link p {
         display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
     
     .main-sidebar.sidebar-open .nav-sidebar .nav-link i {
         margin-right: 0.5rem;
+    }
+    
+    /* 确保移动端菜单项完全展开 */
+    .main-sidebar.sidebar-open .nav-sidebar .nav-link {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.5rem 1rem !important;
+        white-space: nowrap !important;
+    }
+    
+    /* 确保移动端菜单项文字不换行 */
+    .main-sidebar.sidebar-open .nav-sidebar .nav-link p {
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* 确保移动端菜单项图标和文字正确排列 */
+    .main-sidebar.sidebar-open .nav-sidebar .nav-link i {
+        flex-shrink: 0 !important;
+        width: auto !important;
+        min-width: 1.5rem !important;
+    }
+    
+    /* 确保移动端菜单项有足够的宽度 */
+    .main-sidebar.sidebar-open .nav-sidebar .nav-item {
+        width: 100% !important;
     }
     
     /* 移动端遮罩层 */
