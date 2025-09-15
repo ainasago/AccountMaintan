@@ -32,11 +32,14 @@ function initializeAdminLTE() {
     // 初始化侧边栏树形菜单
     $('[data-widget="treeview"]').Treeview('init');
     
-    // 不初始化AdminLTE的PushMenu，使用我们的自定义逻辑
-    // $('[data-widget="pushmenu"]').PushMenu('init');
-    
-    // 初始化移动端菜单
-    initializeMobileMenu();
+    // 根据屏幕大小决定使用哪种菜单逻辑
+    if ($(window).width() <= 767.98) {
+        // 移动端：使用自定义逻辑
+        initializeMobileMenu();
+    } else {
+        // 桌面端：使用AdminLTE的PushMenu
+        $('[data-widget="pushmenu"]').PushMenu('init');
+    }
 }
 
 // 初始化移动端菜单
@@ -73,8 +76,18 @@ function initializeMobileMenu() {
     // 窗口大小改变时处理
     $(window).on('resize', function() {
         if ($(window).width() > 767.98) {
-            // 桌面端，确保侧边栏正常显示
+            // 桌面端，重新初始化AdminLTE的PushMenu
             resetSidebarState();
+            $pushMenu.off('click');
+            $('[data-widget="pushmenu"]').PushMenu('init');
+        } else {
+            // 移动端，使用自定义逻辑
+            $pushMenu.off('click');
+            $pushMenu.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSidebar();
+            });
         }
     });
 }
