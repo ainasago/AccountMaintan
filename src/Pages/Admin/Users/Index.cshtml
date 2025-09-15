@@ -185,12 +185,12 @@
                     <label class="form-check-label" for="editIsAdmin">管理员</label>
                 </div>
                 <div class="alert alert-info" id="editUserTip">
-                    目前仅展示用户信息，保存功能待后端更新接口后启用。
+                    可编辑显示名称、邮箱和管理员标志。
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" id="saveEditUserBtn" disabled>保存（暂不可用）</button>
+                <button type="button" class="btn btn-primary" id="saveEditUserBtn">保存</button>
             </div>
         </div>
     </div>
@@ -541,6 +541,52 @@
                 // 展示模态框
                 var modal = new bootstrap.Modal(document.getElementById('editUserModal'));
                 modal.show();
+
+                // 绑定保存按钮
+                $('#saveEditUserBtn').off('click').on('click', async function () {
+                    try {
+                        const token = await getCsrfToken();
+                        $.ajaxSetup({
+                            beforeSend: function(xhr) {
+                                if (token) {
+                                    xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                                }
+                            }
+                        });
+
+                        const payload = {
+                            displayName: $('#editDisplayName').val(),
+                            email: $('#editEmail').val(),
+                            isAdmin: $('#editIsAdmin').is(':checked')
+                        };
+                        console.log('[editUser] 提交更新payload:', payload);
+
+                        $.ajax({
+                            url: `/api/admin/users/${userId}`,
+                            type: 'PUT',
+                            contentType: 'application/json',
+                            data: JSON.stringify(payload),
+                            success: function(r){
+                                if (r && r.success) {
+                                    location.reload();
+                                } else {
+                                    alert('更新失败: ' + (r && r.message ? r.message : '未知错误'));
+                                }
+                            },
+                            error: function(xhr){
+                                console.error('[editUser] 更新失败:', xhr);
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    alert('更新失败: ' + xhr.responseJSON.message);
+                                } else {
+                                    alert('更新失败');
+                                }
+                            }
+                        });
+                    } catch (e) {
+                        console.error('[editUser] 保存失败:', e);
+                        alert('保存失败');
+                    }
+                });
             } catch (e) {
                 console.error('[editUser] 打开编辑用户失败:', e);
                 alert('打开编辑用户失败');

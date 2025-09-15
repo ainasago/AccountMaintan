@@ -183,6 +183,53 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// 更新用户信息（显示名称、邮箱、管理员标志）
+    /// </summary>
+    [HttpPut("users/{id}")]
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest request)
+    {
+        try
+        {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null || !await _adminService.IsAdminAsync(currentUserId))
+            {
+                return Forbid();
+            }
+
+            var user = await _adminService.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "用户不存在" });
+            }
+
+            if (user.IsSuperAdmin)
+            {
+                return BadRequest(new { success = false, message = "不能修改超级管理员" });
+            }
+
+            // 更新字段（仅基础信息）
+            if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            {
+                user.DisplayName = request.DisplayName.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                user.Email = request.Email.Trim();
+                user.UserName = request.Email.Trim();
+            }
+            user.IsAdmin = request.IsAdmin;
+
+            var result = await _adminService.UpdateUserAsync(user);
+            return Ok(new { success = result.success, message = result.message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "更新用户失败: {UserId}", id);
+            return StatusCode(500, new { success = false, message = "更新用户失败" });
+        }
+    }
+
+    /// <summary>
     /// 获取管理员设置
     /// </summary>
     [HttpGet("settings")]
@@ -378,5 +425,15 @@ public class CreateUserRequest
     public string EncryptedPassword { get; set; } = string.Empty;
     public string EncryptedConfirmPassword { get; set; } = string.Empty;
     public string EncryptionToken { get; set; } = string.Empty;
+    public bool IsAdmin { get; set; } = false;
+}
+
+/// <summary>
+/// 更新用户请求模型
+/// </summary>
+public class UpdateUserRequest
+{
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public bool IsAdmin { get; set; } = false;
 }
