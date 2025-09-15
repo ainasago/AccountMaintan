@@ -535,6 +535,9 @@
             $('#submitUserBtn').text('保存');
             $('#password').attr('placeholder', '留空表示不修改');
             $('#confirmPassword').attr('placeholder', '留空表示不修改');
+            // 编辑模式下，密码可选：移除required
+            $('#password').prop('required', false);
+            $('#confirmPassword').prop('required', false);
         }
 
         function resetUserFormToCreateMode() {
@@ -548,6 +551,9 @@
             $('#confirmPassword').attr('placeholder', '');
             $('.password-errors').hide().text('');
             $('#password').removeClass('is-invalid is-valid');
+            // 创建模式下，密码必填：恢复required
+            $('#password').prop('required', true);
+            $('#confirmPassword').prop('required', true);
         }
 
         async function toggleUserStatus(userId, isEnabled) {
