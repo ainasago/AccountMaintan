@@ -164,12 +164,23 @@
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        // 全局变量
-        let csrfToken = null;
-        let passwordEncryptionToken = null;
+        // 等待jQuery加载完成
+        function waitForJQuery() {
+            if (typeof $ !== 'undefined') {
+                initializePage();
+            } else {
+                setTimeout(waitForJQuery, 100);
+            }
+        }
 
-        // 初始化CSRF令牌
-        async function initializeCsrfToken() {
+        // 页面初始化
+        function initializePage() {
+            // 全局变量
+            let csrfToken = null;
+            let passwordEncryptionToken = null;
+
+            // 初始化CSRF令牌
+            async function initializeCsrfToken() {
             try {
                 console.log('正在获取CSRF令牌...');
                 const response = await fetch('/api/admin/csrf-token', {
@@ -570,5 +581,8 @@
                 }
             }
         }
+
+        // 启动页面初始化
+        waitForJQuery();
     </script>
 }

@@ -83,8 +83,7 @@ public class ApiSecurityMiddleware
             "payment=(), " +
             "usb=(), " +
             "magnetometer=(), " +
-            "gyroscope=(), " +
-            "speaker=()";
+            "gyroscope=()";
     }
 
     /// <summary>

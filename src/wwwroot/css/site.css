@@ -136,10 +136,73 @@
     
     .main-sidebar {
         transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1040;
+        width: 250px;
     }
     
     .main-sidebar.sidebar-open {
         transform: translateX(0);
+    }
+    
+    /* 移动端遮罩层 */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1039;
+        display: none;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* 确保内容区域在移动端正确显示 */
+    .wrapper {
+        overflow-x: hidden;
+    }
+    
+    /* 移动端菜单按钮样式 */
+    .navbar-toggler {
+        border: none;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: none;
+    }
+    
+    /* 确保侧边栏在移动端正确显示 */
+    .main-sidebar .sidebar {
+        height: calc(100vh - 50px);
+        overflow-y: auto;
+    }
+    
+    /* 移动端品牌链接样式 */
+    .main-sidebar .brand-link {
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* 桌面端确保侧边栏正常显示 */
+@media (min-width: 768px) {
+    .main-sidebar {
+        position: relative;
+        transform: none !important;
+        height: auto;
+        z-index: auto;
+    }
+    
+    .sidebar-overlay {
+        display: none !important;
     }
 }
 

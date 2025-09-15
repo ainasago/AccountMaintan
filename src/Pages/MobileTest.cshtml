@@ -1,0 +1,251 @@
+@page
+@model MobileTestModel
+@{
+    ViewData["Title"] = "移动端测试";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-mobile-alt me-2 text-primary"></i>移动端菜单测试
+            </h1>
+        </div>
+    </div>
+
+    <!-- 测试说明 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>测试说明</h5>
+                <p class="mb-0">请将浏览器窗口调整到移动端尺寸（宽度小于768px）或使用开发者工具的移动端模拟器来测试菜单功能。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能测试卡片 -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bars me-2"></i>菜单功能测试
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>点击左上角菜单按钮</span>
+                            <span class="badge bg-primary">测试1</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>侧边栏应该从左侧滑入</span>
+                            <span class="badge bg-primary">测试2</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>点击遮罩层关闭菜单</span>
+                            <span class="badge bg-primary">测试3</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>点击菜单项关闭菜单</span>
+                            <span class="badge bg-primary">测试4</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-check-circle me-2"></i>测试结果
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="testResults">
+                        <p class="text-muted">请按照左侧步骤进行测试，结果将显示在这里。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 响应式测试 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-desktop me-2"></i>响应式测试
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
+                            <div class="p-3 bg-primary text-white text-center rounded">
+                                <i class="fas fa-mobile-alt fa-2x mb-2"></i>
+                                <div>移动端</div>
+                                <small>&lt; 768px</small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
+                            <div class="p-3 bg-secondary text-white text-center rounded">
+                                <i class="fas fa-tablet-alt fa-2x mb-2"></i>
+                                <div>平板端</div>
+                                <small>768px - 992px</small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
+                            <div class="p-3 bg-success text-white text-center rounded">
+                                <i class="fas fa-laptop fa-2x mb-2"></i>
+                                <div>笔记本</div>
+                                <small>992px - 1200px</small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
+                            <div class="p-3 bg-info text-white text-center rounded">
+                                <i class="fas fa-desktop fa-2x mb-2"></i>
+                                <div>桌面端</div>
+                                <small>&gt; 1200px</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 当前屏幕信息 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info me-2"></i>当前屏幕信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <strong>屏幕宽度:</strong> <span id="screenWidth">-</span>px
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <strong>屏幕高度:</strong> <span id="screenHeight">-</span>px
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <strong>设备类型:</strong> <span id="deviceType">-</span>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <strong>菜单状态:</strong> <span id="menuStatus">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 等待jQuery加载完成
+        function waitForJQuery() {
+            if (typeof $ !== 'undefined') {
+                initializeMobileTest();
+            } else {
+                setTimeout(waitForJQuery, 100);
+            }
+        }
+
+        function initializeMobileTest() {
+            // 更新屏幕信息
+            function updateScreenInfo() {
+                const width = $(window).width();
+                const height = $(window).height();
+                
+                $('#screenWidth').text(width);
+                $('#screenHeight').text(height);
+                
+                let deviceType = '桌面端';
+                if (width < 768) {
+                    deviceType = '移动端';
+                } else if (width < 992) {
+                    deviceType = '平板端';
+                } else if (width < 1200) {
+                    deviceType = '笔记本';
+                }
+                
+                $('#deviceType').text(deviceType);
+                
+                // 检查菜单状态
+                const sidebar = $('.main-sidebar');
+                const menuStatus = sidebar.hasClass('sidebar-open') ? '打开' : '关闭';
+                $('#menuStatus').text(menuStatus);
+            }
+            
+            // 监听窗口大小变化
+            $(window).on('resize', updateScreenInfo);
+            
+            // 监听菜单状态变化
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'class') {
+                        updateScreenInfo();
+                    }
+                });
+            });
+            
+            const sidebar = document.querySelector('.main-sidebar');
+            if (sidebar) {
+                observer.observe(sidebar, { attributes: true });
+            }
+            
+            // 初始更新
+            updateScreenInfo();
+            
+            // 测试结果记录
+            let testResults = [];
+            
+            // 监听菜单按钮点击
+            $('[data-widget="pushmenu"]').on('click', function() {
+                setTimeout(() => {
+                    const isOpen = $('.main-sidebar').hasClass('sidebar-open');
+                    if (isOpen) {
+                        addTestResult('菜单打开测试', '成功', 'success');
+                    } else {
+                        addTestResult('菜单打开测试', '失败', 'danger');
+                    }
+                }, 100);
+            });
+            
+            // 监听遮罩层点击
+            $('#sidebarOverlay').on('click', function() {
+                setTimeout(() => {
+                    const isOpen = $('.main-sidebar').hasClass('sidebar-open');
+                    if (!isOpen) {
+                        addTestResult('遮罩层关闭测试', '成功', 'success');
+                    } else {
+                        addTestResult('遮罩层关闭测试', '失败', 'danger');
+                    }
+                }, 100);
+            });
+            
+            // 添加测试结果
+            function addTestResult(testName, result, type) {
+                const resultHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        <strong>${testName}:</strong> ${result}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $('#testResults').prepend(resultHtml);
+            }
+            
+            // 显示初始说明
+            addTestResult('页面加载', '完成', 'info');
+        }
+
+        // 启动测试
+        waitForJQuery();
+    </script>
+}

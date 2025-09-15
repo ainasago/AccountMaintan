@@ -3,19 +3,29 @@
 
 // Write your JavaScript code.
 
-// 初始化AdminLTE和权限检查
-$(document).ready(function() {
-    // 初始化AdminLTE
-    initializeAdminLTE();
-    
-    // 检查用户权限并显示管理菜单
-    if (isUserLoggedIn()) {
-        checkAdminPermissions();
+// 等待jQuery加载完成
+function waitForJQuery() {
+    if (typeof $ !== 'undefined') {
+        // 初始化AdminLTE和权限检查
+        $(document).ready(function() {
+            // 初始化AdminLTE
+            initializeAdminLTE();
+            
+            // 检查用户权限并显示管理菜单
+            if (isUserLoggedIn()) {
+                checkAdminPermissions();
+            } else {
+                // 用户未登录，隐藏所有管理菜单
+                hideAdminMenus();
+            }
+        });
     } else {
-        // 用户未登录，隐藏所有管理菜单
-        hideAdminMenus();
+        setTimeout(waitForJQuery, 100);
     }
-});
+}
+
+// 启动等待jQuery
+waitForJQuery();
 
 // 初始化AdminLTE
 function initializeAdminLTE() {
@@ -24,6 +34,75 @@ function initializeAdminLTE() {
     
     // 初始化推送菜单
     $('[data-widget="pushmenu"]').PushMenu('init');
+    
+    // 初始化移动端菜单
+    initializeMobileMenu();
+}
+
+// 初始化移动端菜单
+function initializeMobileMenu() {
+    const $pushMenu = $('[data-widget="pushmenu"]');
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    // 点击菜单按钮
+    $pushMenu.on('click', function(e) {
+        e.preventDefault();
+        toggleSidebar();
+    });
+    
+    // 点击遮罩层关闭菜单
+    $overlay.on('click', function() {
+        closeSidebar();
+    });
+    
+    // 点击菜单项关闭菜单（移动端）
+    $sidebar.find('.nav-link').on('click', function() {
+        if ($(window).width() <= 767.98) {
+            closeSidebar();
+        }
+    });
+    
+    // 窗口大小改变时处理
+    $(window).on('resize', function() {
+        if ($(window).width() > 767.98) {
+            // 桌面端，确保侧边栏正常显示
+            $sidebar.removeClass('sidebar-open');
+            $overlay.removeClass('show');
+        }
+    });
+}
+
+// 切换侧边栏
+function toggleSidebar() {
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    if ($sidebar.hasClass('sidebar-open')) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+}
+
+// 打开侧边栏
+function openSidebar() {
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    $sidebar.addClass('sidebar-open');
+    $overlay.addClass('show');
+    $('body').addClass('sidebar-open');
+}
+
+// 关闭侧边栏
+function closeSidebar() {
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    $sidebar.removeClass('sidebar-open');
+    $overlay.removeClass('show');
+    $('body').removeClass('sidebar-open');
 }
 
 // 检查用户是否已登录
