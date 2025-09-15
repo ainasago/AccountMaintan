@@ -32,65 +32,83 @@ function initializeAdminLTE() {
     // 初始化侧边栏树形菜单
     $('[data-widget="treeview"]').Treeview('init');
     
-    // 根据屏幕大小决定使用哪种菜单逻辑
-    if ($(window).width() <= 767.98) {
-        // 移动端：使用自定义逻辑
-        initializeMobileMenu();
-    } else {
-        // 桌面端：使用AdminLTE的PushMenu
-        $('[data-widget="pushmenu"]').PushMenu('init');
-    }
+    // 初始化菜单系统
+    initializeMenuSystem();
 }
 
-// 初始化移动端菜单
-function initializeMobileMenu() {
+// 初始化菜单系统
+function initializeMenuSystem() {
     const $pushMenu = $('[data-widget="pushmenu"]');
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    // 清除所有现有的事件绑定
+    $pushMenu.off('click');
+    $overlay.off('click');
+    $sidebar.find('.nav-link').off('click');
+    $(window).off('resize.menu');
+    
+    // 检查是否为移动端
+    const isMobile = $(window).width() <= 767.98;
+    
+    if (isMobile) {
+        // 移动端：使用自定义逻辑
+        console.log('初始化移动端菜单');
+        initializeMobileMenuLogic();
+    } else {
+        // 桌面端：使用AdminLTE的PushMenu
+        console.log('初始化桌面端菜单');
+        $pushMenu.PushMenu('init');
+    }
+}
+
+// 移动端菜单逻辑
+function initializeMobileMenuLogic() {
+    const $pushMenu = $('[data-widget="pushmenu"]');
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    console.log('移动端菜单初始化开始');
+    console.log('PushMenu元素:', $pushMenu.length);
+    console.log('Sidebar元素:', $sidebar.length);
+    console.log('Overlay元素:', $overlay.length);
+    
     // 重置状态，确保初始状态正确
     resetSidebarState();
-    
-    // 禁用AdminLTE的默认PushMenu行为，使用我们的自定义逻辑
-    $pushMenu.off('click');
     
     // 点击菜单按钮
     $pushMenu.on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        console.log('移动端菜单按钮被点击');
+        console.log('当前窗口宽度:', $(window).width());
         toggleSidebar();
     });
     
     // 点击遮罩层关闭菜单
     $overlay.on('click', function() {
+        console.log('遮罩层被点击，关闭菜单');
         closeSidebar();
     });
     
     // 点击菜单项关闭菜单（移动端）
     $sidebar.find('.nav-link').on('click', function() {
         if ($(window).width() <= 767.98) {
+            console.log('菜单项被点击，关闭菜单');
             closeSidebar();
         }
     });
     
     // 窗口大小改变时处理
-    $(window).on('resize', function() {
-        if ($(window).width() > 767.98) {
-            // 桌面端，重新初始化AdminLTE的PushMenu
-            resetSidebarState();
-            $pushMenu.off('click');
-            $('[data-widget="pushmenu"]').PushMenu('init');
-        } else {
-            // 移动端，使用自定义逻辑
-            $pushMenu.off('click');
-            $pushMenu.on('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleSidebar();
-            });
-        }
+    $(window).on('resize.menu', function() {
+        console.log('窗口大小改变，重新初始化菜单系统');
+        console.log('新窗口宽度:', $(window).width());
+        initializeMenuSystem();
     });
+    
+    console.log('移动端菜单初始化完成');
 }
+
 
 // 重置侧边栏状态
 function resetSidebarState() {
@@ -111,12 +129,21 @@ function toggleSidebar() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    console.log('toggleSidebar被调用');
+    console.log('Sidebar元素:', $sidebar.length);
+    console.log('Overlay元素:', $overlay.length);
+    console.log('Sidebar classes:', $sidebar.attr('class'));
+    console.log('Overlay classes:', $overlay.attr('class'));
+    
     // 检查当前状态
     const isOpen = $sidebar.hasClass('sidebar-open') && $overlay.hasClass('show');
+    console.log('当前状态 - isOpen:', isOpen);
     
     if (isOpen) {
+        console.log('关闭侧边栏');
         closeSidebar();
     } else {
+        console.log('打开侧边栏');
         openSidebar();
     }
 }
