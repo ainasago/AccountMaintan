@@ -159,6 +159,43 @@
     </div>
 </div>
 
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">用户ID</label>
+                    <input type="text" class="form-control" id="editUserId" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">显示名称</label>
+                    <input type="text" class="form-control" id="editDisplayName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" class="form-control" id="editEmail">
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="editIsAdmin">
+                    <label class="form-check-label" for="editIsAdmin">管理员</label>
+                </div>
+                <div class="alert alert-info" id="editUserTip">
+                    目前仅展示用户信息，保存功能待后端更新接口后启用。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="saveEditUserBtn" disabled>保存（暂不可用）</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
 @section Scripts {
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -473,6 +510,41 @@
                     alert('添加用户时发生错误');
                 }
             });
+        }
+
+        // 打开编辑用户模态框（最小可用实现）
+        async function editUser(userId) {
+            try {
+                console.log('[editUser] 打开编辑用户，userId:', userId);
+                // 获取用户列表
+                const resp = await $.ajax({ url: '/api/admin/users', type: 'GET' });
+                console.log('[editUser] 获取用户列表成功:', resp);
+                const users = resp && (resp.data || resp.users || resp);
+                if (!users || !Array.isArray(users)) {
+                    console.error('[editUser] 返回数据格式不正确:', resp);
+                    alert('获取用户数据失败：返回格式不正确');
+                    return;
+                }
+                const user = users.find(u => (u.id || u.Id) === userId);
+                console.log('[editUser] 匹配到的用户:', user);
+                if (!user) {
+                    alert('未找到该用户');
+                    return;
+                }
+
+                // 填充表单
+                $('#editUserId').val(userId);
+                $('#editDisplayName').val(user.displayName || user.DisplayName || '');
+                $('#editEmail').val(user.email || user.Email || '');
+                $('#editIsAdmin').prop('checked', !!(user.isAdmin ?? user.IsAdmin));
+
+                // 展示模态框
+                var modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                modal.show();
+            } catch (e) {
+                console.error('[editUser] 打开编辑用户失败:', e);
+                alert('打开编辑用户失败');
+            }
         }
 
         async function toggleUserStatus(userId, isEnabled) {
