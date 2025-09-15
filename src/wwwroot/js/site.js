@@ -32,8 +32,8 @@ function initializeAdminLTE() {
     // 初始化侧边栏树形菜单
     $('[data-widget="treeview"]').Treeview('init');
     
-    // 初始化推送菜单
-    $('[data-widget="pushmenu"]').PushMenu('init');
+    // 不初始化AdminLTE的PushMenu，使用我们的自定义逻辑
+    // $('[data-widget="pushmenu"]').PushMenu('init');
     
     // 初始化移动端菜单
     initializeMobileMenu();
@@ -45,9 +45,16 @@ function initializeMobileMenu() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    // 重置状态，确保初始状态正确
+    resetSidebarState();
+    
+    // 禁用AdminLTE的默认PushMenu行为，使用我们的自定义逻辑
+    $pushMenu.off('click');
+    
     // 点击菜单按钮
     $pushMenu.on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         toggleSidebar();
     });
     
@@ -67,10 +74,23 @@ function initializeMobileMenu() {
     $(window).on('resize', function() {
         if ($(window).width() > 767.98) {
             // 桌面端，确保侧边栏正常显示
-            $sidebar.removeClass('sidebar-open');
-            $overlay.removeClass('show');
+            resetSidebarState();
         }
     });
+}
+
+// 重置侧边栏状态
+function resetSidebarState() {
+    const $sidebar = $('.main-sidebar');
+    const $overlay = $('#sidebarOverlay');
+    
+    // 确保所有状态都被重置
+    $sidebar.removeClass('sidebar-open');
+    $overlay.removeClass('show');
+    $('body').removeClass('sidebar-open');
+    $('body').css('overflow', '');
+    
+    console.log('侧边栏状态已重置');
 }
 
 // 切换侧边栏
@@ -78,7 +98,10 @@ function toggleSidebar() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
-    if ($sidebar.hasClass('sidebar-open')) {
+    // 检查当前状态
+    const isOpen = $sidebar.hasClass('sidebar-open') && $overlay.hasClass('show');
+    
+    if (isOpen) {
         closeSidebar();
     } else {
         openSidebar();
@@ -90,9 +113,15 @@ function openSidebar() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    // 确保所有相关元素都处于正确状态
     $sidebar.addClass('sidebar-open');
     $overlay.addClass('show');
     $('body').addClass('sidebar-open');
+    
+    // 防止body滚动
+    $('body').css('overflow', 'hidden');
+    
+    console.log('侧边栏已打开');
 }
 
 // 关闭侧边栏
@@ -100,9 +129,15 @@ function closeSidebar() {
     const $sidebar = $('.main-sidebar');
     const $overlay = $('#sidebarOverlay');
     
+    // 确保所有相关元素都处于正确状态
     $sidebar.removeClass('sidebar-open');
     $overlay.removeClass('show');
     $('body').removeClass('sidebar-open');
+    
+    // 恢复body滚动
+    $('body').css('overflow', '');
+    
+    console.log('侧边栏已关闭');
 }
 
 // 检查用户是否已登录
