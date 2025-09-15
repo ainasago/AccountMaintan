@@ -198,6 +198,21 @@ dotnet run --configuration Release
 3. 设置CSRF保护选项
 4. 查看安全头配置状态
 
+### Bootstrap 5 升级
+
+#### 测试升级效果
+1. 访问"Bootstrap 5 测试"页面（/TestBootstrap5）
+2. 验证所有UI组件正常工作
+3. 测试响应式布局效果
+4. 检查JavaScript交互功能
+
+#### 主要改进
+- **现代化设计**：采用Bootstrap 5的最新设计语言
+- **更好的响应式**：改进的网格系统和断点
+- **增强的组件**：更新的按钮、表单、模态框等组件
+- **性能优化**：更小的CSS和JavaScript文件
+- **更好的可访问性**：改进的ARIA支持和键盘导航
+
 ### 笔记管理
 
 #### 创建笔记
@@ -282,11 +297,12 @@ dotnet run --configuration Release
 - **文档处理**：ClosedXML (Excel)
 
 ### 前端技术
-- **UI框架**：Bootstrap 5
-- **图标**：Font Awesome
+- **UI框架**：Bootstrap 5.3.3 + AdminLTE v3.2.0
+- **图标**：Font Awesome 6.0.0
 - **交互**：jQuery + SignalR
 - **页面**：Razor Pages
 - **实时通信**：ASP.NET Core SignalR
+- **富文本编辑**：Quill.js
 
 ### 开发工具
 - **IDE**：Visual Studio 2022 / VS Code
@@ -446,6 +462,16 @@ ENTRYPOINT ["dotnet", "WebUI.dll"]
 4. 启动应用：`dotnet run`
 
 ## 📝 更新日志
+
+### v1.1.0 (2024-12-15)
+- ✅ **Bootstrap 5 升级**：全面升级到 Bootstrap 5.3.3
+- ✅ **AdminLTE v3.2.0 兼容**：保持 AdminLTE v3.2.0 的完整功能
+- ✅ **响应式优化**：改进移动端和桌面端显示效果
+- ✅ **现代化UI**：更新所有组件样式和交互效果
+- ✅ **JavaScript API 更新**：适配 Bootstrap 5 的新 API
+- ✅ **CSS 类名更新**：全面更新为 Bootstrap 5 兼容的类名
+- ✅ **测试页面**：新增 Bootstrap 5 功能测试页面
+- ✅ **向后兼容**：保持所有现有功能的完整性
 
 ### v1.0.0 (2024-12)
 - ✅ 完整的用户认证系统（注册、登录、邮箱密码修改）

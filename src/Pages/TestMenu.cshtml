@@ -1,0 +1,53 @@
+@page
+@{
+    ViewData["Title"] = "菜单测试";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">菜单功能测试</h3>
+                </div>
+                <div class="card-body">
+                    <p>请点击左上角的菜单按钮测试侧边栏功能。</p>
+                    <p>如果菜单正常工作，您应该能看到侧边栏从左侧滑入。</p>
+                    
+                    <div class="alert alert-info">
+                        <h5>测试步骤：</h5>
+                        <ol>
+                            <li>点击左上角的三条横线图标（菜单按钮）</li>
+                            <li>检查侧边栏是否从左侧滑入</li>
+                            <li>点击遮罩层或再次点击菜单按钮关闭侧边栏</li>
+                            <li>在移动设备上测试响应式效果</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5>调试信息：</h5>
+                        <p>请打开浏览器开发者工具的控制台查看调试信息：</p>
+                        <ul>
+                            <li>"初始化移动端菜单，屏幕宽度: XXX"</li>
+                            <li>"菜单按钮被点击"</li>
+                            <li>"切换侧边栏，当前状态: true/false"</li>
+                            <li>"打开菜单" 或 "关闭菜单"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    console.log('测试页面加载完成');
+    console.log('jQuery 版本:', $.fn.jquery);
+    console.log('菜单按钮元素:', $('[data-widget="pushmenu"]').length);
+    console.log('侧边栏元素:', $('.main-sidebar').length);
+    console.log('遮罩层元素:', $('.sidebar-overlay').length);
+});
+</script>
+}

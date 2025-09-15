@@ -21,7 +21,7 @@
                                 <i class="fas fa-search me-1"></i>搜索
                             </button>
                         </div>
-                        <div class="btn-group ml-2">
+                        <div class="btn-group ms-2">
                             <button class="btn btn-outline-secondary" id="cardViewBtn" onclick="switchView('card')" title="卡片视图">
                                 <i class="fas fa-th-large"></i>
                             </button>
@@ -64,7 +64,7 @@
                         <!-- 批量操作工具栏 -->
                         <div id="batchToolbar" class="mb-3" style="display: none;">
                             <div class="d-flex align-items-center">
-                                <span class="mr-3">
+                                <span class="me-3">
                                     <strong>已选择 <span id="selectedCount">0</span> 项</strong>
                                 </span>
                                 <div class="btn-group">
@@ -120,17 +120,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="noteModalTitle">新建笔记</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <ul class="nav nav-tabs" id="noteTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link active" id="details-tab" data-toggle="tab" href="#detailsTab" role="tab">编辑</a>
+                        <a class="nav-link active" id="details-tab" data-bs-toggle="tab" href="#detailsTab" role="tab">编辑</a>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" id="attachments-tab" data-toggle="tab" href="#attachmentsTab" role="tab">附件</a>
+                        <a class="nav-link" id="attachments-tab" data-bs-toggle="tab" href="#attachmentsTab" role="tab">附件</a>
                     </li>
                 </ul>
                 <div class="tab-content mt-3">
@@ -211,8 +209,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" onclick="$('#noteTab a[href=\'#attachmentsTab\']').tab('show')">附件</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="var tab = new bootstrap.Tab(document.querySelector('#noteTab a[href=\'#attachmentsTab\']')); tab.show();">附件</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button type="button" class="btn btn-primary" onclick="saveNote()">保存</button>
             </div>
         </div>
@@ -225,9 +223,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">上传文件</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="upload-area" id="uploadArea">
@@ -264,7 +260,7 @@
                 <div id="attachmentsGrid" class="row mt-3"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
             </div>
         </div>
     </div>
@@ -308,7 +304,7 @@
             });
 
             // 切换到附件Tab时，初始化上传与加载附件、初始化图片预览
-            $(document).on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+            $(document).on('shown.bs.tab', 'a[data-bs-toggle="tab"]', function (e) {
                 const target = $(e.target).attr('href');
                 if (target === '#attachmentsTab') {
                     if (!uploadSetupInitialized) {
@@ -533,15 +529,15 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <strong>${note.title}</strong>
-                            ${note.isPublic ? '<span class="badge badge-info ml-2">公开</span>' : ''}
+                            ${note.isPublic ? '<span class="badge bg-info ms-2">公开</span>' : ''}
                         </div>
                         <small class="text-muted">${summary}</small>
                     </td>
                     <td>
-                        ${note.category ? `<span class="badge badge-secondary">${note.category}</span>` : '-'}
+                        ${note.category ? `<span class="badge bg-secondary">${note.category}</span>` : '-'}
                     </td>
                     <td>
-                        ${tags.length > 0 ? tags.map(tag => `<span class="badge badge-light mr-1">${tag}</span>`).join('') : '-'}
+                        ${tags.length > 0 ? tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('') : '-'}
                     </td>
                     <td>
                         ${hasAttachments ? `<i class="fas fa-paperclip text-success"></i> ${note.attachments.length}` : '-'}
@@ -711,7 +707,8 @@
             $('#noteModalTitle').text('新建笔记');
             $('#noteForm')[0].reset();
             quill.setContents([]);
-            $('#noteModal').modal('show');
+            var modal = new bootstrap.Modal(document.getElementById('noteModal'));
+            modal.show();
         }
 
         // 编辑笔记
@@ -750,7 +747,8 @@
                         // 加载附件
                         await loadAttachments(noteId);
 
-                        $('#noteModal').modal('show');
+                        var modal = new bootstrap.Modal(document.getElementById('noteModal'));
+            modal.show();
                     }
                 } else {
                     showAlert('加载笔记失败', 'danger');
@@ -826,7 +824,8 @@
                     const data = await response.json();
                     if (data.success) {
                         showAlert(data.message, 'success');
-                        $('#noteModal').modal('hide');
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
+                        modal.hide();
                         loadNotes(currentPage);
                     }
                 } else {
@@ -938,7 +937,8 @@
             if (typeof refreshAttachments === 'function') {
                 refreshAttachments();
             }
-            $('#uploadModal').modal('show');
+            var modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+            modal.show();
         }
 
         // 刷新当前笔记附件列表
@@ -1211,9 +1211,7 @@
             const alertHtml = `
                 <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                     ${message}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             `;
             $('body').prepend(alertHtml);

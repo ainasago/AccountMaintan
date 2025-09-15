@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - 账号资源管理系统</title>
     
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
     <!-- AdminLTE CSS -->
     <link rel="stylesheet" href="~/lib/admin-lte/css/adminlte.min.css">
     <!-- Font Awesome -->
@@ -26,23 +28,23 @@
             </ul>
 
             <!-- 右侧导航栏 -->
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav ms-auto">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user me-1"></i>
                             @(User.Identity.Name ?? "用户")
                         </a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" asp-page="/Account/ChangePassword">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" asp-page="/Account/ChangePassword">
                                 <i class="fas fa-user-cog me-2"></i>个人设置
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="/Account/Logout">
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/Account/Logout">
                                 <i class="fas fa-sign-out-alt me-2"></i>退出登录
-                            </a>
-                        </div>
+                            </a></li>
+                        </ul>
                     </li>
                 }
                 else
@@ -61,7 +63,7 @@
             <!-- 品牌Logo -->
             <a href="/" class="brand-link">
                 <i class="fas fa-key brand-image"></i>
-                <span class="brand-text font-weight-light">账号资源管理</span>
+                <span class="brand-text fw-light">账号资源管理</span>
             </a>
 
             <!-- 侧边栏菜单 -->
@@ -178,7 +180,7 @@
                             <h1 class="m-0">@ViewData["Title"]</h1>
                         </div>
                         <div class="col-sm-6">
-                            <ol class="breadcrumb float-sm-right">
+                            <ol class="breadcrumb float-sm-end">
                                 <li class="breadcrumb-item"><a href="/">首页</a></li>
                                 <li class="breadcrumb-item active">@ViewData["Title"]</li>
                             </ol>
@@ -197,7 +199,7 @@
 
         <!-- 页脚 -->
         <footer class="main-footer">
-            <div class="float-right d-none d-sm-block">
+            <div class="float-end d-none d-sm-block">
                 <b>版本</b> 1.0.0
             </div>
             <strong>Copyright &copy; 2024 <a href="/">账号资源管理系统</a>.</strong>
@@ -207,8 +209,8 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap 4 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5 -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
     <!-- SignalR -->
