@@ -540,29 +540,35 @@
         });
 
                  // 启动提醒调度
-         function startScheduler() {
+         async function startScheduler() {
              const button = event.target.closest('button');
              if (button) {
                  button.disabled = true;
                  button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>启动中...';
              }
 
-             fetch('/api/reminders/start', {
-                 method: 'POST',
-                 headers: {
-                     'Content-Type': 'application/json'
-                 }
-             })
-             .then(response => {
+             try {
+                 const token = await getCsrfTokenForPage();
+                 const headers = { 'Content-Type': 'application/json' };
+                 if (token) headers['X-CSRF-TOKEN'] = token;
+
+                 const response = await fetch('/api/reminders/start', {
+                     method: 'POST',
+                     headers: headers,
+                     credentials: 'include'
+                 });
+
                  if (!response.ok) {
+                     if (response.status === 403) {
+                         showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                         return;
+                     }
                      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                  }
-                 return response.json();
-             })
-             .then(data => {
+
+                 const data = await response.json();
                  if (data.success) {
                      showToast('提醒调度已启动', 'success');
-                     // 刷新数据
                      setTimeout(() => {
                          loadSchedulerStatus();
                          loadStatistics();
@@ -571,43 +577,47 @@
                  } else {
                      showToast('启动失败: ' + (data.message || '未知错误'), 'error');
                  }
-             })
-             .catch(error => {
+             } catch (error) {
                  console.error('Error:', error);
                  showToast('启动失败: ' + error.message, 'error');
-             })
-             .finally(() => {
+             } finally {
                  if (button) {
                      button.disabled = false;
                      button.innerHTML = '<i class="fas fa-play me-1"></i>启动调度';
                  }
-             });
+             }
          }
 
          // 停止提醒调度
-         function stopScheduler() {
+         async function stopScheduler() {
              const button = event.target.closest('button');
              if (button) {
                  button.disabled = true;
                  button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>停止中...';
              }
 
-             fetch('/api/reminders/stop', {
-                 method: 'POST',
-                 headers: {
-                     'Content-Type': 'application/json'
-                 }
-             })
-             .then(response => {
+             try {
+                 const token = await getCsrfTokenForPage();
+                 const headers = { 'Content-Type': 'application/json' };
+                 if (token) headers['X-CSRF-TOKEN'] = token;
+
+                 const response = await fetch('/api/reminders/stop', {
+                     method: 'POST',
+                     headers: headers,
+                     credentials: 'include'
+                 });
+
                  if (!response.ok) {
+                     if (response.status === 403) {
+                         showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                         return;
+                     }
                      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                  }
-                 return response.json();
-             })
-             .then(data => {
+
+                 const data = await response.json();
                  if (data.success) {
                      showToast('提醒调度已停止', 'success');
-                     // 刷新数据
                      setTimeout(() => {
                          loadSchedulerStatus();
                          loadStatistics();
@@ -616,63 +626,65 @@
                  } else {
                      showToast('停止失败: ' + (data.message || '未知错误'), 'error');
                  }
-             })
-             .catch(error => {
+             } catch (error) {
                  console.error('Error:', error);
                  showToast('停止失败: ' + error.message, 'error');
-             })
-             .finally(() => {
+             } finally {
                  if (button) {
                      button.disabled = false;
                      button.innerHTML = '<i class="fas fa-stop me-1"></i>停止调度';
                  }
-             });
+             }
          }
 
          // 手动触发提醒检查
-         function triggerReminderCheck() {
-            const button = event.target.closest('button');
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>检查中...';
-            }
+         async function triggerReminderCheck() {
+             const button = event.target.closest('button');
+             if (button) {
+                 button.disabled = true;
+                 button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>检查中...';
+             }
 
-            fetch('/api/reminders/trigger', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showToast('提醒检查已触发', 'success');
-                    // 刷新数据
-                    setTimeout(() => {
-                        loadSchedulerStatus();
-                        loadStatistics();
-                        loadReminderAccounts();
-                    }, 2000);
-                } else {
-                    showToast('触发失败: ' + (data.message || '未知错误'), 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('触发失败: ' + error.message, 'error');
-            })
-                         .finally(() => {
+             try {
+                 const token = await getCsrfTokenForPage();
+                 const headers = { 'Content-Type': 'application/json' };
+                 if (token) headers['X-CSRF-TOKEN'] = token;
+
+                 const response = await fetch('/api/reminders/trigger', {
+                     method: 'POST',
+                     headers: headers,
+                     credentials: 'include'
+                 });
+
+                 if (!response.ok) {
+                     if (response.status === 403) {
+                         showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                         return;
+                     }
+                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                 }
+
+                 const data = await response.json();
+                 if (data.success) {
+                     showToast('提醒检查已触发', 'success');
+                     setTimeout(() => {
+                         loadSchedulerStatus();
+                         loadStatistics();
+                         loadReminderAccounts();
+                     }, 2000);
+                 } else {
+                     showToast('触发失败: ' + (data.message || '未知错误'), 'error');
+                 }
+             } catch (error) {
+                 console.error('Error:', error);
+                 showToast('触发失败: ' + error.message, 'error');
+             } finally {
                  if (button) {
                      button.disabled = false;
                      button.innerHTML = '<i class="fas fa-sync me-1"></i>手动检查';
                  }
-             });
-        }
+             }
+         }
 
         // 加载调度状态
         function loadSchedulerStatus() {
