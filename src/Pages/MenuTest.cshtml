@@ -1,0 +1,97 @@
+@page
+@model WebUI.Pages.MenuTestModel
+@{
+    ViewData["Title"] = "菜单测试";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">移动端菜单测试</h3>
+                </div>
+                <div class="card-body">
+                    <p>请使用移动设备或调整浏览器窗口大小到移动端尺寸（宽度 ≤ 767px）来测试菜单功能。</p>
+                    
+                    <div class="alert alert-info">
+                        <h5>测试步骤：</h5>
+                        <ol>
+                            <li>确保浏览器窗口宽度 ≤ 767px</li>
+                            <li>点击左上角的菜单按钮（三条横线图标）</li>
+                            <li>检查侧边栏是否从左侧滑出</li>
+                            <li>检查遮罩层是否显示</li>
+                            <li>点击遮罩层或菜单项，检查菜单是否关闭</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5>调试信息：</h5>
+                        <p>请打开浏览器开发者工具（F12），查看控制台（Console）标签页中的调试信息。</p>
+                        <p>应该能看到：</p>
+                        <ul>
+                            <li>"初始化菜单系统"</li>
+                            <li>"PushMenu元素: 1"</li>
+                            <li>"Sidebar元素: 1"</li>
+                            <li>"Overlay元素: 1"</li>
+                            <li>"当前窗口宽度: XXX"</li>
+                            <li>"菜单初始化完成"</li>
+                        </ul>
+                        <p>点击菜单按钮时应该能看到：</p>
+                        <ul>
+                            <li>"菜单按钮被点击"</li>
+                            <li>"移动端菜单切换"</li>
+                            <li>"toggleSidebar被调用"</li>
+                            <li>"当前状态 - isOpen: false/true"</li>
+                            <li>"打开侧边栏" 或 "关闭侧边栏"</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-primary" onclick="testMenuToggle()">测试菜单切换</button>
+                        <button class="btn btn-secondary" onclick="checkMenuElements()">检查菜单元素</button>
+                        <button class="btn btn-info" onclick="showWindowInfo()">显示窗口信息</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function testMenuToggle() {
+            console.log('手动测试菜单切换');
+            if (typeof toggleSidebar === 'function') {
+                toggleSidebar();
+            } else {
+                console.error('toggleSidebar函数未定义');
+            }
+        }
+        
+        function checkMenuElements() {
+            console.log('检查菜单元素:');
+            console.log('PushMenu元素:', $('[data-widget="pushmenu"]').length);
+            console.log('Sidebar元素:', $('.main-sidebar').length);
+            console.log('Overlay元素:', $('#sidebarOverlay').length);
+            console.log('PushMenu元素存在:', $('[data-widget="pushmenu"]').length > 0);
+            console.log('Sidebar元素存在:', $('.main-sidebar').length > 0);
+            console.log('Overlay元素存在:', $('#sidebarOverlay').length > 0);
+        }
+        
+        function showWindowInfo() {
+            console.log('窗口信息:');
+            console.log('窗口宽度:', $(window).width());
+            console.log('窗口高度:', $(window).height());
+            console.log('是否为移动端:', $(window).width() <= 767.98);
+            console.log('User Agent:', navigator.userAgent);
+        }
+        
+        // 页面加载完成后显示信息
+        $(document).ready(function() {
+            console.log('菜单测试页面加载完成');
+            showWindowInfo();
+            checkMenuElements();
+        });
+    </script>
+}
