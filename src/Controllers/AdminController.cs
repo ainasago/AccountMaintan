@@ -105,8 +105,8 @@ public class AdminController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "创建用户失败");
-            return StatusCode(500, new { success = false, message = "创建用户失败" });
+            _logger.LogError(ex, "创建用户失败: {Message}", ex.Message);
+            return StatusCode(500, new { success = false, message = $"创建用户失败: {ex.Message}" });
         }
     }
 
