@@ -529,7 +529,7 @@
         }
 
         // 测试邮件配置
-        function testEmailSettings() {
+        async function testEmailSettings() {
             const settings = {
                 isEnabled: document.getElementById('emailEnabled').checked,
                 smtpServer: document.getElementById('smtpServer').value,
@@ -545,75 +545,109 @@
                 gmailClientSecret: document.getElementById('gmailClientSecret').value,
                 gmailRefreshToken: document.getElementById('gmailRefreshToken').value
             };
+            try {
+                const token = await getCsrfToken();
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['X-CSRF-TOKEN'] = token;
 
-            fetch('/api/settings/test-email', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(settings)
-            })
-            .then(response => response.json())
-            .then(data => {
+                const response = await fetch('/api/settings/test-email', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(settings),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
                 if (data.success) {
                     showToast('邮件配置测试成功', 'success');
                 } else {
-                    showToast('测试失败: ' + data.message, 'error');
+                    showToast('测试失败: ' + (data.message || '未知错误'), 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('测试失败', 'error');
-            });
+            }
         }
 
         // 测试Telegram配置
-        function testTelegramSettings() {
+        async function testTelegramSettings() {
             const settings = {
                 isEnabled: document.getElementById('telegramEnabled').checked,
                 botToken: document.getElementById('botToken').value,
                 chatId: document.getElementById('chatId').value,
                 enableMarkdown: document.getElementById('enableMarkdown').checked
             };
+            try {
+                const token = await getCsrfToken();
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['X-CSRF-TOKEN'] = token;
 
-            fetch('/api/settings/test-telegram', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(settings)
-            })
-            .then(response => response.json())
-            .then(data => {
+                const response = await fetch('/api/settings/test-telegram', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(settings),
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
                 if (data.success) {
                     showToast('Telegram配置测试成功', 'success');
                 } else {
-                    showToast('测试失败: ' + data.message, 'error');
+                    showToast('测试失败: ' + (data.message || '未知错误'), 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('测试失败', 'error');
-            });
+            }
         }
 
         // 测试所有通知
-        function testAllNotifications() {
-            fetch('/api/settings/test-all', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
+        async function testAllNotifications() {
+            try {
+                const token = await getCsrfToken();
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['X-CSRF-TOKEN'] = token;
+
+                const response = await fetch('/api/settings/test-all', {
+                    method: 'POST',
+                    headers: headers,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        showToast('CSRF令牌验证失败，请刷新页面重试', 'error');
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
                 if (data.success) {
                     showToast('所有通知测试成功', 'success');
                 } else {
-                    showToast('测试失败: ' + data.message, 'error');
+                    showToast('测试失败: ' + (data.message || '未知错误'), 'error');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 showToast('测试失败', 'error');
-            });
+            }
         }
 
         // 显示提示消息
