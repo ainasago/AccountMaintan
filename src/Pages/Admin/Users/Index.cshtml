@@ -173,14 +173,12 @@
             }
         }
 
-        // 页面初始化
-        function initializePage() {
-            // 全局变量
-            let csrfToken = null;
-            let passwordEncryptionToken = null;
+        // 全局变量
+        let csrfToken = null;
+        let passwordEncryptionToken = null;
 
-            // 初始化CSRF令牌
-            async function initializeCsrfToken() {
+        // 初始化CSRF令牌
+        async function initializeCsrfToken() {
             try {
                 console.log('正在获取CSRF令牌...');
                 const response = await fetch('/api/admin/csrf-token', {
@@ -294,7 +292,8 @@
             }
         }
 
-        $(document).ready(function() {
+        // 页面初始化
+        function initializePage() {
             // 初始化CSRF令牌
             initializeCsrfToken();
             
@@ -436,21 +435,34 @@
                             }
                         },
                         error: function(xhr) {
+                            console.error('添加用户失败:', xhr);
                             let errorMessage = '添加用户时发生错误';
                             
                             if (xhr.status === 403) {
                                 errorMessage = 'CSRF令牌验证失败，请刷新页面重试';
+                            } else if (xhr.status === 500) {
+                                errorMessage = '服务器内部错误，请检查日志';
                             } else if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
                             } else if (xhr.responseText) {
                                 try {
+                                    // 检查响应是否为有效的JSON
                                     const response = JSON.parse(xhr.responseText);
                                     if (response.message) {
                                         errorMessage = response.message;
                                     }
                                 } catch (e) {
-                                    // 如果解析失败，使用默认错误信息
+                                    console.error('JSON解析失败:', e);
+                                    console.error('响应内容:', xhr.responseText);
+                                    // 如果解析失败，检查是否是HTML错误页面
+                                    if (xhr.responseText.includes('<html>') || xhr.responseText.includes('<!DOCTYPE')) {
+                                        errorMessage = '服务器返回了HTML页面而不是JSON，可能是服务器错误';
+                                    } else {
+                                        errorMessage = '服务器响应格式错误: ' + xhr.responseText.substring(0, 100);
+                                    }
                                 }
+                            } else {
+                                errorMessage = `HTTP ${xhr.status}: ${xhr.statusText}`;
                             }
                             
                             alert('添加用户失败: ' + errorMessage);
@@ -461,7 +473,7 @@
                     alert('添加用户时发生错误');
                 }
             });
-        });
+        }
 
         async function toggleUserStatus(userId, isEnabled) {
             const action = isEnabled ? '禁用' : '启用';
